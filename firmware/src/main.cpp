@@ -12,23 +12,13 @@
 /**********************************************************************************/
 
 #include <Arduino.h>
-
-void setup() {
-    Serial.begin(115200);
-    delay(2000);
-
-    Serial.println();
-    Serial.println("ESP32-S3 board test");
-    Serial.printf("Chip: %s\n", ESP.getChipModel());
-    Serial.printf("Flash: %u MB\n",
-                  ESP.getFlashChipSize() / (1024 * 1024));
-    Serial.printf("PSRAM detected: %s\n",
-                  psramFound() ? "YES" : "NO");
-    Serial.printf("PSRAM size: %u bytes\n",
-                  ESP.getPsramSize());
-}
-
+#include <Wire.h>
+void setup() { Serial.begin(115200); Wire.begin(8, 9); delay(1500); }
 void loop() {
-    Serial.println("Board is running!");
-    delay(2000);
+for (byte a = 1; a < 127; a++) {
+Wire.beginTransmission(a);
+if (Wire.endTransmission() == 0) Serial.printf("Found 0x%02X\n", a);
+}
+Serial.println("---");
+delay(3000);
 }
