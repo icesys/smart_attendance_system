@@ -1,0 +1,7 @@
+# students.csv - copy this file to the ROOT of the microSD card.
+# One student per line:  UID,Name   (the UID is the 10 hex characters that the reader sends)
+# Lines that start with # and the header line below are ignored.
+uid,name
+0A00B2C3D4,Tendai Moyo
+0A00B2C3D5,Amina Benali
+0A00B2C3D6,Example Student
