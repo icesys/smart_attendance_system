@@ -36,6 +36,13 @@
 #include <vector>               // std::vector, lists that can grow while the program runs
 #include "config.h"             // our pins and options
 #include "parsers.h"            // our RDM6300 and CSV parsers
+#if USE_DRIVE_MODE && ARDUINO_USB_MODE   // drive mode only works when the USB port runs in TinyUSB (OTG) mode
+#error "USE_DRIVE_MODE needs -DARDUINO_USB_MODE=0 in platformio.ini (see the comments there)" // stop the build with a clear message
+#endif                          // end of the USB mode check
+#if USE_DRIVE_MODE            // USB drive mode needs the USB (TinyUSB) libraries of the Arduino core
+#include "USB.h"                // starts the native USB-C port as a USB device
+#include "USBMSC.h"             // USB mass storage class: makes the SD card show up as a drive on the PC
+#endif                          // end of the USB include block
 #if USE_OLED                    // include the OLED libraries only if the OLED is enabled in config.h
 #include <Adafruit_GFX.h>       // graphics base library of the OLED
 #include <Adafruit_SSD1306.h>   // driver of the SSD1306 OLED
@@ -54,6 +61,11 @@ bool oledOk = false;            // becomes true when the OLED answered at start-
 bool rtcOk = false;             // true when the clock is found and has a valid time
 bool sdOk = false;              // true when the microSD card is working
 bool muted = false;             // true when the buzzer is switched off with button 2
+bool driveMode = false;        // true while the SD card is shown to the PC as a USB drive
+volatile bool mscEjected = false; // true after the PC has "ejected" the drive (set by the USB task)
+#if USE_DRIVE_MODE              // the USB drive object exists only if drive mode is enabled
+USBMSC msc;                     // the USB mass storage "disk" shown to the PC
+#endif                          // end of the drive object block
 std::vector<StudentRec> students;   // all students loaded from /students.csv
 std::vector<uint64_t> seen;     // cards already tapped in the current session
 bool sessionActive = false;     // true between "start session" and "stop session"
@@ -77,7 +89,7 @@ const Step P_BOOT[] = {         // played at power-up when everything is fine: t
   {LED_G, true, 80}, {0, false, 80},        // short green blink + beep, then a pause
   {LED_G, true, 80}, {0, false, 80},        // second short blink + beep, then a pause
   {LED_G, true, 200}, {0, false, 0}         // long blink + beep, then the end marker (ms = 0)
-};                              // end of P_BOOT
+};                         
 const Step P_OK[] = {           // a known student was counted
   {LED_G, true, 120}, {LED_G, false, 250},  // green with a short beep, then green alone for a moment
   {0, false, 0}                             // end marker
@@ -112,6 +124,10 @@ const Step P_ERROR[] = {        // something is wrong (no SD card, no clock, wri
 const Step P_MUTE[] = {         // confirms that mute was switched on or off (both LEDs, no sound)
   {LED_G | LED_R, false, 150}, {0, false, 0} // both LEDs for a moment, end marker
 };                              // end of P_MUTE
+const Step P_DRIVE[] = {        // drive mode switched on: both LEDs and two beeps
+  {LED_G | LED_R, true, 200}, {0, false, 100},  // both LEDs + beep, pause
+  {LED_G | LED_R, true, 200}, {0, false, 0}     // both LEDs + beep, end marker
+};                              // end of P_DRIVE
 
 const Step* patCur = nullptr;   // the step being played now (nullptr = no pattern playing)
 uint32_t patT0 = 0;             // time (millis) when the current step started
@@ -154,12 +170,21 @@ void idleLedUpdate() {                                            // called from
   bool fault = !sdOk || !rtcOk;                                   // a fault exists if the card or the clock is not OK
   bool g = false;                                                 // green LED state to apply
   bool r = false;                                                 // red LED state to apply
-  if (fault) r = (t % 1000) < 100;                                // fault: short red blink every second
+  if (driveMode) { g = (t % 1000) < 500; r = !g; }                // drive mode: green and red LEDs take turns every half second
+  else if (fault) r = (t % 1000) < 100;                           // fault: short red blink every second
   else if (sessionActive) g = true;                               // session running: steady green
   else g = (t % 2000) < 80;                                       // ready: short green blink every 2 seconds
   digitalWrite(PIN_LED_GREEN, g ? HIGH : LOW);                    // apply the green LED state
   digitalWrite(PIN_LED_RED, r ? HIGH : LOW);                      // apply the red LED state
 }                                                                 // end of idleLedUpdate
+
+// The power LED: two fast blinks every 3 seconds, so you can see that the system is on.
+void powerLedUpdate() {                                           // called from loop(); never waits
+  uint32_t p = millis() % HEARTBEAT_PERIOD_MS;                    // position inside the 3-second cycle (0 to 2999 ms)
+  bool on = (p < HEARTBEAT_BLINK_MS) ||                           // first blink: 0 to 80 ms
+            (p >= 2 * HEARTBEAT_BLINK_MS && p < 3 * HEARTBEAT_BLINK_MS); // second blink: 160 to 240 ms
+  digitalWrite(PIN_LED_POWER, on ? HIGH : LOW);                   // LED on during the blinks, off for the rest of the cycle
+}                                                                 // end of powerLedUpdate
 
 // ------------------------------ PUSH BUTTONS -------------------------------
 enum BtnEvent : uint8_t { BTN_NONE, BTN_SHORT, BTN_LONG };        // what a button can report
@@ -282,6 +307,11 @@ bool alreadySeen(uint64_t id) {                                   // true if thi
 // ------------------------------ SESSIONS -----------------------------------
 bool startSession() {                                             // begins a new lecture session; returns true on success
   if (sessionActive) return true;                                 // already running: nothing to do
+  if (driveMode) {                                                // the PC owns the SD card in drive mode
+    Serial.println("Drive mode is on: hold button 2 (or type REBOOT) to leave it first."); // explain
+    startPattern(P_ERROR);                                        // signal the error
+    return false;                                                 // failed
+  }                                                               // end of the drive-mode check
   if (!rtcOk || !sdOk) {                                          // we need the clock (for time stamps) and the card (for files)
     Serial.println("Cannot start: clock or SD card not ready. Type STATUS."); // tell the PC user why
     startPattern(P_ERROR);                                        // tell the lecturer with LEDs and buzzer
@@ -371,12 +401,124 @@ void handleTap(const char* uidStr, uint64_t id) {                 // uidStr = ca
   Serial.printf("TAP %s | %s | %s %s\n", uidStr, st ? st->name : "UNKNOWN", d, t); // report on the PC
 }                                                                 // end of handleTap
 
+// ------------------------------ I2C HELPER ---------------------------------
+bool i2cPresent(uint8_t addr) {                                   // true if a device answers at this I2C address
+  Wire.beginTransmission(addr);                                   // start talking to the address
+  return Wire.endTransmission() == 0;                             // 0 = a device acknowledged, so it is really there
+}                                                                 // end of i2cPresent
+
+// ------------------------------ RESTART ------------------------------------
+void rebootNow() {                                                // restarts the ESP32 (this is also how drive mode is left)
+  Serial.println("Restarting...");                                // tell the PC
+  Serial.flush();                                                 // wait until the text has really been sent
+  delay(200);                                                     // short pause so the message is not cut
+  ESP.restart();                                                  // software reset: the ESP32 starts again from setup()
+}                                                                 // end of rebootNow
+
+// ------------------------------ USB DRIVE MODE -----------------------------
+#if USE_DRIVE_MODE                                                // real drive mode code, only if enabled
+uint32_t mscSectorSize = 512;                                     // bytes per SD sector (read from the card when drive mode starts)
+
+// The PC asks for data: read sectors from the SD card and hand them over.
+static int32_t onMscRead(uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize) { // lba = first sector number
+  uint32_t first = lba + offset / mscSectorSize;                  // first sector to read (offset is normally 0)
+  uint32_t count = bufsize / mscSectorSize;                       // how many whole sectors the PC wants
+  uint8_t* out = (uint8_t*)buffer;                                // where to put the data
+  for (uint32_t i = 0; i < count; i++) {                          // one sector at a time
+    if (!SD.readRAW(out + i * mscSectorSize, first + i)) return -1; // raw read failed: tell the PC it is an error
+  }                                                               // end of the loop
+  return (int32_t)(count * mscSectorSize);                        // number of bytes delivered
+}                                                                 // end of onMscRead
+
+// The PC sends data (copy, delete, edit a file): write the sectors to the SD card.
+static int32_t onMscWrite(uint32_t lba, uint32_t offset, uint8_t* buffer, uint32_t bufsize) { // lba = first sector number
+  uint32_t first = lba + offset / mscSectorSize;                  // first sector to write
+  uint32_t count = bufsize / mscSectorSize;                       // how many whole sectors
+  for (uint32_t i = 0; i < count; i++) {                          // one sector at a time
+    if (!SD.writeRAW(buffer + i * mscSectorSize, first + i)) return -1; // raw write failed: tell the PC
+  }                                                               // end of the loop
+  return (int32_t)(count * mscSectorSize);                        // number of bytes written
+}                                                                 // end of onMscWrite
+
+// The PC sends start/stop/eject commands (for example when you click "Eject").
+static bool onMscStartStop(uint8_t power_condition, bool start, bool load_eject) { // called by the USB task
+  (void)power_condition;                                          // not needed here
+  if (load_eject && !start) mscEjected = true;                    // the PC ejected the drive: it is safe to leave drive mode
+  if (load_eject && start) mscEjected = false;                    // the drive was loaded again
+  return true;                                                    // accept the command
+}                                                                 // end of onMscStartStop
+
+bool startDriveMode() {                                           // makes the SD card appear as a USB drive on the PC
+  if (driveMode) return true;                                     // already in drive mode
+  if (sessionActive) {                                            // never interrupt a running lecture by accident
+    Serial.println("Stop the session first (hold button 1), then enter drive mode."); // explain
+    startPattern(P_ERROR);                                        // signal the error
+    return false;                                                 // failed
+  }                                                               // end of the session check
+  if (!sdOk) {                                                    // no card, nothing to show
+    Serial.println("No SD card: nothing to show as a drive.");    // explain
+    startPattern(P_ERROR);                                        // signal the error
+    return false;                                                 // failed
+  }                                                               // end of the card check
+  size_t sectors = SD.numSectors();                               // how many sectors the card has
+  mscSectorSize = (uint32_t)SD.sectorSize();                      // how big one sector is (normally 512 bytes)
+  if (sectors == 0 || mscSectorSize == 0) {                       // the card did not report its size
+    Serial.println("Cannot read the card size.");                 // explain
+    startPattern(P_ERROR);                                        // signal the error
+    return false;                                                 // failed
+  }                                                               // end of the size check
+  mscEjected = false;                                             // not ejected yet
+  USB.manufacturerName("ice");                                    // name shown by the PC for the USB device
+  USB.productName("Smart Attendance");                            // product name shown by the PC
+  msc.vendorID("ATTEND");                                         // short vendor text of the drive (max 8 characters)
+  msc.productID("SD card");                                       // product text of the drive (max 16 characters)
+  msc.productRevision("1.0");                                     // version text (max 4 characters)
+  msc.onRead(onMscRead);                                          // tell the USB driver how to read the card
+  msc.onWrite(onMscWrite);                                        // ... how to write the card
+  msc.onStartStop(onMscStartStop);                                // ... what to do on eject
+  msc.mediaPresent(true);                                         // the "disk" is inserted
+  if (!msc.begin((uint32_t)sectors, (uint16_t)mscSectorSize)) {   // create the drive with the size of the SD card
+    Serial.println("USB drive could not be created.");            // explain
+    startPattern(P_ERROR);                                        // signal the error
+    return false;                                                 // failed
+  }                                                               // end of the create check
+  USB.begin();                                                    // switch the native USB-C port on: the PC now sees the drive
+  driveMode = true;                                               // from now on the firmware leaves the SD card alone
+  Serial.println("DRIVE MODE: plug a USB cable into the NATIVE USB-C port. Eject the drive on the PC, then hold button 2 to leave."); // instructions
+  startPattern(P_DRIVE);                                          // blink and beep
+  return true;                                                    // success
+}                                                                 // end of startDriveMode
+#else                                                             // drive mode disabled in config.h or platformio.ini
+bool startDriveMode() {                                           // placeholder so the rest of the code still compiles
+  Serial.println("Drive mode is not built in (USE_DRIVE_MODE is 0)."); // explain
+  startPattern(P_ERROR);                                          // signal
+  return false;                                                   // failed
+}                                                                 // end of placeholder
+#endif                                                            // end of the drive mode block
+
 // ------------------------------ OLED SCREEN --------------------------------
 #if USE_OLED                                                      // all OLED drawing code exists only if enabled
+void drawDriveScreen() {                                          // OLED text shown during drive mode
+  oled.clearDisplay();                                            // erase the screen buffer
+  oled.setTextSize(1);                                            // smallest text: 21 characters per line
+  oled.setTextColor(SSD1306_WHITE);                               // white pixels on black
+  oled.setCursor(0, 0);                                           // top line
+  oled.print("USB DRIVE MODE");                                   // title
+  oled.setCursor(0, 12);                                          // second line
+  oled.print("Use the native USB-C");                             // tell the user which port
+  oled.setCursor(0, 22);                                          // third line
+  oled.print("port to see the files");                            // continued
+  oled.setCursor(0, 36);                                          // fifth line
+  oled.print(mscEjected ? "Ejected: safe to exit" : "Eject on the PC first"); // safety hint, changes after the eject
+  oled.setCursor(0, 50);                                          // last line
+  oled.print("Hold button 2 to exit");                            // how to leave
+  oled.display();                                                 // send the buffer to the screen
+}                                                                 // end of drawDriveScreen
 uint32_t lastDraw = 0;                                            // time of the last screen refresh
 void drawScreen() {                                               // redraws the OLED twice per second
   if (!oledOk || millis() - lastDraw < 500) return;               // no OLED, or it was refreshed less than 0.5 s ago
   lastDraw = millis();                                            // remember this refresh
+  if (driveMode) { drawDriveScreen(); return; }                   // drive mode has its own screen
   char d[11] = "----------";                                      // date text (dashes if the clock is not ready)
   char t[9] = "--:--:--";                                         // time text (dashes if the clock is not ready)
   if (rtcOk) {                                                    // the clock works
@@ -423,12 +565,15 @@ void printHelp() {                                                // lists the c
   Serial.println("  RELOAD                       read /students.csv again");
   Serial.println("  INIT                         restart the SD card after a problem");
   Serial.println("  MUTE                         mute or unmute the buzzer");
+  Serial.println("  DRIVE                        show the SD card as a USB drive (native USB-C port)");
+  Serial.println("  REBOOT                       restart (also leaves drive mode)");
 }                                                                 // end of printHelp
 
 void printStatus() {                                              // prints the health of the system
   Serial.printf("Clock: %s | SD card: %s | Students: %u | Session: %s | Buzzer: %s\n", // one summary line
                 rtcOk ? "OK" : "NOT READY", sdOk ? "OK" : "NOT READY", (unsigned)students.size(), // values
                 sessionActive ? "ACTIVE" : "stopped", muted ? "muted" : "on"); // more values
+  Serial.printf("Drive mode: %s\n", driveMode ? "ON" : "off"); // also show whether the SD card belongs to the PC
 }                                                                 // end of printStatus
 
 void printTime() {                                                // prints the clock
@@ -483,7 +628,7 @@ void dumpFile(const char* name) {                                 // prints one 
   char path[96];                                                  // full path buffer
   snprintf(path, sizeof(path), "%s/%s", DIR_ATTENDANCE, name);    // /attendance/<name>
   File f = SD.open(path, FILE_READ);                              // open it for reading
-  if (!f) { Serial.println("File not found."); return; }         // wrong name
+  if (!f) { Serial.println("File not found."); return; }          // wrong name
   Serial.printf("----- %s -----\n", name);                        // start marker (copy the lines below it)
   uint8_t buf[128];                                               // read 128 bytes at a time
   while (f.available()) {                                         // until the end of the file
@@ -523,6 +668,10 @@ void handleCommand(char* line) {                                  // runs one ty
     while (*arg == ' ') arg++;                                    // skip extra spaces
   }                                                               // end of "there is an argument"
   for (char* p = line; *p; p++) *p = (char)toupper((unsigned char)*p); // commands work in any letter case
+  if (driveMode && (!strcmp(line, "START") || !strcmp(line, "STOP") || !strcmp(line, "LIST") || !strcmp(line, "DUMP") || !strcmp(line, "RELOAD") || !strcmp(line, "INIT"))) { // commands that need the SD card
+    Serial.println("Not available in drive mode (the PC owns the SD card). Type REBOOT to leave drive mode."); // explain
+    return;                                                       // do nothing else
+  }                                                               // end of the drive-mode guard
   if (!strcmp(line, "HELP")) printHelp();                         // each branch compares the command word
   else if (!strcmp(line, "STATUS")) printStatus();                // show system health
   else if (!strcmp(line, "TIME")) printTime();                    // show the clock
@@ -535,6 +684,8 @@ void handleCommand(char* line) {                                  // runs one ty
   else if (!strcmp(line, "RELOAD")) { Serial.printf("%u students loaded\n", (unsigned)(sdOk ? loadStudents() : 0)); } // re-read the list
   else if (!strcmp(line, "INIT")) { Serial.println(mountSd() ? "SD card OK" : "SD card FAILED"); } // restart the card
   else if (!strcmp(line, "MUTE")) toggleMute();                   // same as button 2
+  else if (!strcmp(line, "DRIVE")) startDriveMode();              // same as a long press of button 2
+  else if (!strcmp(line, "REBOOT")) rebootNow();                  // restart the ESP32
   else Serial.println("Unknown command. Type HELP.");             // anything else
 }                                                                 // end of handleCommand
 
@@ -561,6 +712,7 @@ void setup() {                                                    // runs once a
   pinMode(PIN_LED_GREEN, OUTPUT);                                 // green LED pin is an output
   pinMode(PIN_LED_RED, OUTPUT);                                   // red LED pin is an output
   pinMode(PIN_BUZZER, OUTPUT);                                    // buzzer transistor pin is an output
+  pinMode(PIN_LED_POWER, OUTPUT);                                 // power LED pin is an output
   digitalWrite(PIN_BUZZER, LOW);                                  // buzzer silent at start
   btnSession.begin(PIN_BTN_SESSION);                              // prepare button 1
   btnMute.begin(PIN_BTN_MUTE);                                    // prepare button 2
@@ -577,8 +729,25 @@ void setup() {                                                    // runs once a
     Serial.println("RTC lost power: set it with SETTIME YYYY-MM-DD HH:MM:SS"); // hint
   }                                                               // end of the clock checks
 #if USE_OLED                                                      // OLED start-up only if enabled
-  oledOk = oled.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);           // start the OLED (internal charge pump)
-  if (!oledOk) Serial.println("OLED not found (continuing without it)."); // hint
+  uint8_t oledAddr = 0;                                           // 0 = OLED not found yet
+  if (i2cPresent(OLED_ADDR)) oledAddr = OLED_ADDR;                // does a device answer at the configured address?
+  else if (i2cPresent(OLED_ADDR ^ 0x01)) oledAddr = OLED_ADDR ^ 0x01; // 0x3C <-> 0x3D: many modules use the other address
+  if (oledAddr) {                                                 // something answered
+    oledOk = oled.begin(SSD1306_SWITCHCAPVCC, oledAddr, true, false); // start the display driver (false = we already started I2C)
+    Serial.printf("OLED found at 0x%02X, init %s\n", oledAddr, oledOk ? "OK" : "FAILED"); // report
+  } else {                                                        // nothing answered on either address
+    Serial.println("OLED not found at 0x3C or 0x3D: check VCC, GND, SDA=GPIO9, SCL=GPIO8."); // hint
+  }                                                               // end of the OLED search
+  if (oledOk) {                                                   // show a start-up screen so you can see the OLED works
+    oled.clearDisplay();                                          // erase the screen buffer
+    oled.setTextSize(1);                                          // smallest text
+    oled.setTextColor(SSD1306_WHITE);                             // white on black
+    oled.setCursor(0, 0);                                         // top line
+    oled.print("SMART ATTENDANCE");                               // title
+    oled.setCursor(0, 12);                                        // second line
+    oled.print("Starting...");                                    // message
+    oled.display();                                               // send it to the screen
+  }                                                               // end of the start-up screen
 #endif                                                            // end of the OLED start-up
   if (mountSd()) {                                                // try the microSD card
     size_t n = loadStudents();                                    // read the student list
@@ -597,6 +766,7 @@ void setup() {                                                    // runs once a
 void loop() {                                                     // runs again and again, thousands of times per second
   patternUpdate();                                                // keep the LED/buzzer patterns moving
   idleLedUpdate();                                                // show the device state when no pattern plays
+  powerLedUpdate();                                               // double blink of the power LED every 3 seconds
 
   BtnEvent e1 = btnSession.poll();                                // check button 1
   if (e1 == BTN_SHORT) {                                          // short press
@@ -606,11 +776,18 @@ void loop() {                                                     // runs again 
     stopSession();                                                // stop it
   }                                                               // end of button 1
 
-  if (btnMute.poll() == BTN_SHORT) toggleMute();                  // short press of button 2 mutes or unmutes
+  BtnEvent e2 = btnMute.poll();                                   // check button 2
+  if (e2 == BTN_SHORT) toggleMute();                              // short press: mute or unmute the buzzer
+  else if (e2 == BTN_LONG) {                                      // long press (1.5 s): drive mode on or off
+    if (driveMode) rebootNow();                                   // already in drive mode: restart to leave it
+    else startDriveMode();                                        // otherwise show the SD card as a USB drive
+  }                                                               // end of button 2
 
   while (RFID.available()) {                                      // while bytes are waiting from the reader
     char uid[11];                                                 // receives the card text
-    if (rdm.feed((uint8_t)RFID.read(), uid)) {                    // feed one byte; true when a full valid frame arrived
+    uint8_t b = (uint8_t)RFID.read();                             // take one byte from the reader
+    if (driveMode) continue;                                      // drive mode: ignore cards, the SD card belongs to the PC
+    if (rdm.feed(b, uid)) {                                       // feed the byte to the parser; true when a full valid frame arrived
       uint64_t id;                                                // the card as a number
       if (!parseUid10(uid, id)) continue;                         // should not fail; skip if it does
       uint32_t now = millis();                                    // current time

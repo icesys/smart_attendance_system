@@ -1,3 +1,5 @@
+// g++ -std=c++17 -Iinclude test/host/test_parsers.cpp -o t && ./t
+
 // parsers.h - plain C++ helpers with NO Arduino code, so they can be tested on a PC too.
 #pragma once                                      // include this file only once per build
 #include <stddef.h>                               // size_t
