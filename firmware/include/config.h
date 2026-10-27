@@ -25,13 +25,20 @@ constexpr int PIN_LED_POWER = 5;               // second green LED (through 220 
 
 // ---- Buttons (other leg to GND, internal pull-up resistor is used) ----
 constexpr int PIN_BTN_SESSION = 40;             // short press = start session, long press = stop session
-constexpr int PIN_BTN_MUTE    = 41;             // short press = mute / unmute the buzzer
+constexpr int PIN_BTN_INFO    = 41;             // short press = show time + last file count, hold 3 s = USB drive mode (backup)
 
 // ============================== OPTIONS ======================================
 #define USE_OLED 1                              // 1 = use the OLED, 0 = build without it
 #ifndef USE_DRIVE_MODE                          // platformio.ini can set this; if it does not, use the default below
 #define USE_DRIVE_MODE 1                        // 1 = long press of button 2 shows the SD card as a USB drive, 0 = build without it
 #endif                                          // end of the USE_DRIVE_MODE default
+#ifndef AUTO_DRIVE_MODE                         // platformio.ini can set this; if it does not, use the default below
+#define AUTO_DRIVE_MODE 1                       // 1 = the SD card appears as a drive by itself when a computer is plugged into the native USB port
+#endif                                          // end of the AUTO_DRIVE_MODE default
+#if !USE_DRIVE_MODE                             // automatic drive mode cannot work without drive mode
+#undef AUTO_DRIVE_MODE                          // so remove the setting
+#define AUTO_DRIVE_MODE 0                       // and switch it off
+#endif                                          // end of the consistency check
 constexpr uint8_t OLED_ADDR = 0x3C;             // I2C address of the OLED (try 0x3D if not found)
 constexpr int OLED_W = 128;                     // OLED width in pixels
 constexpr int OLED_H = 64;                      // OLED height in pixels (use 32 for a 128x32 OLED)
@@ -41,6 +48,10 @@ constexpr uint32_t DEBOUNCE_MS   = 40;          // ignore button contact bounce 
 constexpr uint32_t LONG_PRESS_MS = 1500;        // holding a button this long counts as a long press
 constexpr uint32_t HEARTBEAT_PERIOD_MS = 3000;  // the power LED repeats its double blink every 3 seconds
 constexpr uint32_t HEARTBEAT_BLINK_MS  = 80;    // each of the two blinks, and the gap between them, lasts 80 ms (fast)
+constexpr uint32_t DRIVE_LONG_PRESS_MS = 3000;  // holding button 2 this long switches USB drive mode on or off (backup for the automatic mode)
+constexpr uint32_t INFO_SHOW_MS = 5000;         // how long the time and last-file screen stays on the OLED after a short press of button 2
+constexpr uint32_t DRIVE_EXIT_DELAY_MS = 2000;  // the computer must be gone this long before drive mode ends by itself
+constexpr uint32_t AUTO_BLOCK_MS = 60000;       // after an eject and restart, the drive does not reopen by itself for this long
 constexpr size_t   MAX_STUDENTS  = 1000;        // maximum number of students loaded from the card
 constexpr size_t   MAX_SEEN      = 1000;        // maximum number of taps remembered in one session
 
