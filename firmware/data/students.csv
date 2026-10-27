@@ -1,7 +1,8 @@
 # students.csv - copy this file to the ROOT of the microSD card.
-# One student per line:  UID,Name   (the UID is the 10 hex characters that the reader sends)
+# One student per line:  UID,Name,Matricule   (the UID is the 10 hex characters that the reader sends)
 # Lines that start with # and the header line below are ignored.
-uid,name
-0A00B2C3D4,Tendai Moyo
-0A00B2C3D5,Amina Benali
-0A00B2C3D6,Example Student
+uid,name,matricule
+02005B4156,Tsongodza Evidence, 23238ZWE13623
+0A00B2C3D4,Tendai Moyo, 23238ZWE13624
+0A00B2C3D5,Amina Benali, 23238ZWE13625
+0A00B2C3D6,Example Student, 23238ZWE13626
