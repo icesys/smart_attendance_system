@@ -58,3 +58,4 @@ constexpr size_t   MAX_SEEN      = 1000;        // maximum number of taps rememb
 // ---- Names of files and folders on the microSD card ----
 constexpr char FILE_STUDENTS[]  = "/students.csv"; // list of students: one "UID,Name" per line
 constexpr char DIR_ATTENDANCE[] = "/attendance";   // folder where one file per session is saved
+constexpr char DIR_FINAL[]      = "/final";        // folder where the sorted final list of each session is saved (tab-separated .txt)

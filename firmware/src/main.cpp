@@ -34,6 +34,7 @@
 #include <stdio.h>              // snprintf() and sscanf() for building and reading text
 #include <string.h>             // strcmp(), strchr(), strcpy() and other text functions
 #include <vector>               // std::vector, lists that can grow while the program runs
+#include <algorithm>            // std::sort, used to sort the final list by surname
 #include "config.h"             // our pins and options
 #include "parsers.h"            // our RDM6300 and CSV parsers
 #if USE_DRIVE_MODE && ARDUINO_USB_MODE   // drive mode only works when the USB port runs in TinyUSB (OTG) mode
@@ -76,7 +77,9 @@ bool sessionActive = false;     // true between "start session" and "stop sessio
 char sessionPath[64] = "";      // full path of the current session file on the card
 uint16_t presentCount = 0;      // number of known students counted in this session
 uint16_t unknownCount = 0;      // number of unknown cards tapped in this session
-char lastLine[32] = "";         // text of the last tap, shown on the OLED
+char lastSurname[32] = "";      // surname of the last tap, shown on the OLED
+char lastNames[32] = "";        // first name(s) of the last tap (for an unknown card: its UID)
+char lastMat[16] = "";          // matricule (registration number, up to 15 characters) of the last tap
 uint64_t lastUid = 0;           // card number of the last card read by the reader
 uint32_t lastSeenMs = 0;        // time (millis) when that card was last read
 
@@ -311,6 +314,95 @@ bool alreadySeen(uint64_t id) {                                   // true if thi
   return false;                                                   // new card
 }                                                                 // end of alreadySeen
 
+// ------------------------------ FINAL LIST ---------------------------------
+// Finds the newest session file in /attendance (names start with the date and time, so the biggest name is the newest).
+bool findNewestSession(char* out, size_t n) {                     // out receives the file name (without the folder)
+  if (!sdOk) return false;                                        // no card: nothing to find
+  File dir = SD.open(DIR_ATTENDANCE);                             // open the attendance folder
+  if (!dir || !dir.isDirectory()) return false;                   // no folder yet: no files
+  char best[64] = "";                                             // the newest name found so far
+  File f = dir.openNextFile();                                    // first entry of the folder
+  while (f) {                                                     // until there are no more entries
+    if (!f.isDirectory()) {                                       // only real files
+      const char* nm = f.name();                                  // its name
+      const char* slash = strrchr(nm, '/');                       // some library versions include the folder
+      if (slash) nm = slash + 1;                                  // keep only the file name
+      if (strcmp(nm, best) > 0) snprintf(best, sizeof(best), "%s", nm); // the largest name is the newest
+    }                                                             // end of "real file"
+    f = dir.openNextFile();                                       // next entry
+  }                                                               // end of the loop
+  dir.close();                                                    // close the folder
+  if (!best[0]) return false;                                     // the folder is empty
+  snprintf(out, n, "%s", best);                                   // give the name to the caller
+  return true;                                                    // found
+}                                                                 // end of findNewestSession
+
+// Reads one session file and writes the final list of it: the students in alphabetical order of surname,
+// as a tab-separated table (UID, Surname, Name(s), Matricule) that can be copied straight into Excel.
+// Unknown cards come last. The list is saved in /final with the same name as the session file (.txt).
+bool buildFinalList(const char* name, bool printToSerial) {       // name = session file name, without the folder
+  if (!sdOk) return false;                                        // no card: nothing to do
+  char inPath[96];                                                // full path of the session file
+  snprintf(inPath, sizeof(inPath), "%s/%s", DIR_ATTENDANCE, name); // /attendance/<name>
+  File in = SD.open(inPath, FILE_READ);                           // open it for reading
+  if (!in) return false;                                          // not found
+  std::vector<ListRow> rows;                                      // the PRESENT and UNKNOWN lines of the session
+  char line[160];                                                 // buffer for one line of the file
+  size_t n = 0;                                                   // characters in the buffer
+  while (in.available()) {                                        // until the end of the file
+    int ch = in.read();                                           // read one character
+    if (ch < 0) break;                                            // read error: stop
+    if (ch == '\r') continue;                                     // ignore the carriage return of Windows line ends
+    if (ch == '\n' || n >= sizeof(line) - 1) {                    // end of a line (or the line is too long)
+      line[n] = 0;                                                // close the text
+      n = 0;                                                      // start a new line
+      ListRow r;                                                  // place for the result
+      if (rows.size() < MAX_SEEN && parseSessionLine(line, r, (uint16_t)rows.size())) rows.push_back(r); // keep PRESENT and UNKNOWN lines
+      if (ch != '\n') {                                           // the line was too long
+        while (in.available()) {                                  // skip the rest of it
+          int d = in.read();                                      // next character
+          if (d == '\n' || d < 0) break;                          // stop at the line end
+        }                                                         // end of skipping
+      }                                                           // end of "too long"
+    } else {                                                      // a normal character
+      line[n++] = (char)ch;                                       // add it to the buffer
+    }                                                             // end of the if/else
+  }                                                               // end of the file loop
+  if (n > 0) {                                                    // the last line had no line break
+    line[n] = 0;                                                  // close the text
+    ListRow r;                                                    // place for the result
+    if (rows.size() < MAX_SEEN && parseSessionLine(line, r, (uint16_t)rows.size())) rows.push_back(r); // keep it if valid
+  }                                                               // end of "last line"
+  in.close();                                                     // close the session file
+  std::sort(rows.begin(), rows.end(), rowLess);                   // alphabetical by surname, unknown cards last
+  if (!SD.exists(DIR_FINAL) && !SD.mkdir(DIR_FINAL)) return false; // make sure the /final folder exists
+  char baseName[64];                                              // the session file name without ".csv"
+  snprintf(baseName, sizeof(baseName), "%s", name);               // copy it
+  char* dot = strrchr(baseName, '.');                             // find the extension
+  if (dot) *dot = 0;                                              // cut it off
+  char outPath[96];                                               // full path of the final list
+  snprintf(outPath, sizeof(outPath), "%s/%s.txt", DIR_FINAL, baseName); // /final/<name>.txt
+  File out = SD.open(outPath, FILE_WRITE);                        // create it (an old file with the same name is replaced)
+  if (!out) return false;                                         // could not create it
+  out.println(LIST_HEADER);                                       // the heading line: UID, Surname, Name(s), Matricule
+  for (const ListRow& r : rows) {                                 // one line per student
+    char row[128];                                                // text of one row
+    formatListRow(r, row, sizeof(row));                           // UID <tab> Surname <tab> Name(s) <tab> Matricule
+    out.println(row);                                             // write it
+  }                                                               // end of the loop
+  out.close();                                                    // close the file so the data is saved
+  Serial.printf("FINAL LIST saved: %s (%u rows, sorted by surname)\n", outPath, (unsigned)rows.size()); // report
+  if (printToSerial) {                                            // the FINAL command also shows the table on the PC
+    Serial.println(LIST_HEADER);                                  // the heading line
+    for (const ListRow& r : rows) {                               // each row
+      char row[128];                                              // text of one row
+      formatListRow(r, row, sizeof(row));                         // same format as in the file
+      Serial.println(row);                                        // show it
+    }                                                             // end of the loop
+  }                                                               // end of the PC copy
+  return true;                                                    // success
+}                                                                 // end of buildFinalList
+
 // ------------------------------ SESSIONS -----------------------------------
 bool startSession() {                                             // begins a new lecture session; returns true on success
   if (sessionActive) return true;                                 // already running: nothing to do
@@ -332,7 +424,7 @@ bool startSession() {                                             // begins a ne
   DateTime now = rtc.now();                                       // read the current date and time
   snprintf(sessionPath, sizeof(sessionPath), "%s/%04d%02d%02d_%02d%02d%02d.csv", DIR_ATTENDANCE, // file name = date and time
            now.year(), now.month(), now.day(), now.hour(), now.minute(), now.second()); // e.g. /attendance/20261025_143012.csv
-  if (!appendLine(sessionPath, "uid,name,date,time,result")) {    // create the file with its header line
+  if (!appendLine(sessionPath, "uid,surname,names,matricule,date,time,result")) { // create the file with its header line
     Serial.println("Cannot create the session file.");            // explain the failure
     sdOk = false;                                                 // the card is not working
     startPattern(P_ERROR);                                        // signal the error
@@ -342,7 +434,9 @@ bool startSession() {                                             // begins a ne
   presentCount = 0;                                               // reset the counters
   unknownCount = 0;                                               // reset the counters
   lastUid = 0;                                                    // forget the last card so the first tap is never ignored
-  lastLine[0] = 0;                                                // clear the "last tap" text
+  lastSurname[0] = 0;                                             // clear the "last tap" texts
+  lastNames[0] = 0;                                               // (first names)
+  lastMat[0] = 0;                                                 // (matricule)
   sessionActive = true;                                           // the session is now running
   Serial.printf("SESSION START -> %s\n", sessionPath);            // report on the serial monitor
   startPattern(P_START);                                          // beep and blink for the lecturer
@@ -361,7 +455,10 @@ void stopSession() {                                              // ends the cu
   appendLine(sessionPath, line);                                  // add it to the file (starts with # so it is easy to ignore)
   sessionActive = false;                                          // the session is over
   Serial.printf("SESSION STOP: present=%u unknown=%u file=%s\n", (unsigned)presentCount, (unsigned)unknownCount, sessionPath); // report
-  startPattern(P_STOP);                                           // tell the lecturer
+  const char* slash = strrchr(sessionPath, '/');                  // the file name part of the session path
+  bool listOk = buildFinalList(slash ? slash + 1 : sessionPath, false); // write the sorted final list (UID, Surname, Name(s), Matricule)
+  if (!listOk) Serial.println("The final list could not be written. Check the SD card, then type FINAL."); // explain
+  startPattern(listOk ? P_STOP : P_ERROR);                        // tell the lecturer (error pattern if the list failed)
 }                                                                 // end of stopSession
 
 // Called every time a NEW card is read by the reader.
@@ -387,8 +484,8 @@ void handleTap(const char* uidStr, uint64_t id) {                 // uidStr = ca
   char t[9];                                                      // time text
   fmtDate(now, d, sizeof(d));                                     // fill the date text
   fmtTime(now, t, sizeof(t));                                     // fill the time text
-  char line[112];                                                 // one line of the CSV file
-  snprintf(line, sizeof(line), "%s,%s,%s,%s,%s", uidStr, st ? st->name : "UNKNOWN", d, t, st ? "PRESENT" : "UNKNOWN"); // build it
+  char line[160];                                                 // one line of the CSV file
+  snprintf(line, sizeof(line), "%s,%s,%s,%s,%s,%s,%s", uidStr, st ? st->surname : "UNKNOWN", st ? st->names : "", st ? st->matricule : "", d, t, st ? "PRESENT" : "UNKNOWN"); // build it
   if (!appendLine(sessionPath, line)) {                           // write the line to the card
     Serial.println("SD write failed. Check the card, then type INIT."); // explain
     sdOk = false;                                                 // mark the card as not working
@@ -398,14 +495,18 @@ void handleTap(const char* uidStr, uint64_t id) {                 // uidStr = ca
   seen.push_back(id);                                             // remember the card so a second tap is a duplicate
   if (st) {                                                       // a known student
     presentCount++;                                               // count him or her
-    snprintf(lastLine, sizeof(lastLine), "%s", st->name);         // show the name on the OLED
+    snprintf(lastSurname, sizeof(lastSurname), "%s", st->surname); // show the surname on the OLED
+    snprintf(lastNames, sizeof(lastNames), "%s", st->names);      // the first name(s)
+    snprintf(lastMat, sizeof(lastMat), "%s", st->matricule);      // and the matricule
     startPattern(P_OK);                                           // green LED + one beep
   } else {                                                        // an unknown card
     unknownCount++;                                               // count it separately
-    snprintf(lastLine, sizeof(lastLine), "? %s", uidStr);         // show "? UID" on the OLED
+    snprintf(lastSurname, sizeof(lastSurname), "UNKNOWN");        // show UNKNOWN on the OLED
+    snprintf(lastNames, sizeof(lastNames), "%s", uidStr);         // and the card number
+    lastMat[0] = 0;                                               // there is no matricule
     startPattern(P_UNKNOWN);                                      // long red LED + long beep
   }                                                               // end of known/unknown
-  Serial.printf("TAP %s | %s | %s %s\n", uidStr, st ? st->name : "UNKNOWN", d, t); // report on the PC
+  Serial.printf("TAP %s | %s %s | %s | %s %s\n", uidStr, st ? st->surname : "UNKNOWN", st ? st->names : "", st ? st->matricule : "", d, t); // report on the PC
 }                                                                 // end of handleTap
 
 // ------------------------------ I2C HELPER ---------------------------------
@@ -611,21 +712,8 @@ void scanLastFile() {                                             // fills lastI
     return;                                                       // done
   }                                                               // end of the live case
   if (!sdOk) return;                                              // no card: nothing to look at
-  File dir = SD.open(DIR_ATTENDANCE);                             // open the attendance folder
-  if (!dir || !dir.isDirectory()) return;                         // no folder yet: no files
-  char best[64] = "";                                             // the newest file name found so far
-  File f = dir.openNextFile();                                    // first entry of the folder
-  while (f) {                                                     // until there are no more entries
-    if (!f.isDirectory()) {                                       // only real files
-      const char* nm = f.name();                                  // its name
-      const char* slash = strrchr(nm, '/');                       // some library versions include the folder
-      if (slash) nm = slash + 1;                                  // keep only the file name
-      if (strcmp(nm, best) > 0) snprintf(best, sizeof(best), "%s", nm); // names start with the date, so the largest name is the newest
-    }                                                             // end of "real file"
-    f = dir.openNextFile();                                       // next entry
-  }                                                               // end of the loop
-  dir.close();                                                    // close the folder
-  if (!best[0]) return;                                           // the folder is empty
+  char best[64] = "";                                             // the newest file name
+  if (!findNewestSession(best, sizeof(best))) return;             // no card, no folder or no files: nothing to report
   char path[96];                                                  // full path buffer
   snprintf(path, sizeof(path), "%s/%s", DIR_ATTENDANCE, best);    // /attendance/<newest>
   File g = SD.open(path, FILE_READ);                              // open it for reading
@@ -743,24 +831,27 @@ void drawScreen() {                                               // redraws the
   }                                                               // end of "clock works"
   char buf[32];                                                   // buffer for lines with numbers
   oled.clearDisplay();                                            // erase the screen buffer
+  oled.setTextWrap(false);                                        // long names are cut at the edge instead of wrapping onto the next line
   oled.setTextSize(1);                                            // smallest text: 21 characters per line
   oled.setTextColor(SSD1306_WHITE);                               // white pixels on black
-  oled.setCursor(0, 0);                                           // top line
-  oled.print("SMART ATTENDANCE");                                 // title
-  oled.setCursor(0, 10);                                          // second line
-  oled.print(sessionActive ? "SESSION: ACTIVE" : "READY: btn1=start"); // state
-  oled.setCursor(0, 20);                                          // third line
+  oled.setCursor(0, 0);                                           // line 1: what the device is doing, or what is wrong
+  if (usbWaiting) oled.print("USB PC: stop session");             // a computer waits: tell the lecturer what to do
+  else if (!sdOk && !rtcOk) oled.print("ERROR: SD CARD + CLOCK"); // both are bad
+  else if (!sdOk) oled.print("ERROR: SD CARD");                   // the card is bad
+  else if (!rtcOk) oled.print("ERROR: CLOCK");                    // the clock is bad
+  else oled.print(sessionActive ? "SESSION: ACTIVE" : "READY: btn1=start"); // normal state
+  oled.setCursor(0, 10);                                          // line 2
   snprintf(buf, sizeof(buf), "%s %s", d, t);                      // date and time in one text
   oled.print(buf);                                                // show it
-  oled.setCursor(0, 30);                                          // fourth line
-  snprintf(buf, sizeof(buf), "Present:%u Unk:%u", (unsigned)presentCount, (unsigned)unknownCount); // counters
+  oled.setCursor(0, 20);                                          // line 3
+  snprintf(buf, sizeof(buf), "Present:%u Unk:%u%s", (unsigned)presentCount, (unsigned)unknownCount, muted ? " M" : ""); // counters (M = buzzer muted)
   oled.print(buf);                                                // show them
-  oled.setCursor(0, 40);                                          // fifth line
-  oled.print(lastLine);                                           // name (or UID) of the last tap
-  oled.setCursor(0, 50);                                          // sixth line
-  if (usbWaiting) snprintf(buf, sizeof(buf), "USB PC: stop session"); // a computer waits: tell the lecturer what to do
-  else snprintf(buf, sizeof(buf), "SD:%s RTC:%s%s", sdOk ? "OK" : "ERR", rtcOk ? "OK" : "ERR", muted ? " MUTE" : ""); // health flags
-  oled.print(buf);                                                // show them
+  oled.setCursor(0, 32);                                          // line 4: the last student's surname
+  oled.print(lastSurname);                                        // empty before the first tap
+  oled.setCursor(0, 42);                                          // line 5: first name(s)
+  oled.print(lastNames);                                          // empty before the first tap
+  oled.setCursor(0, 52);                                          // line 6: matricule
+  oled.print(lastMat);                                            // up to 15 characters
   oled.display();                                                 // send the buffer to the screen
 }                                                                 // end of drawScreen
 #else                                                             // OLED disabled: provide an empty function
@@ -775,8 +866,9 @@ void printHelp() {                                                // lists the c
   Serial.println("  TIME                         show the clock");
   Serial.println("  SETTIME YYYY-MM-DD HH:MM:SS  set the clock");
   Serial.println("  START / STOP                 start or stop a session");
-  Serial.println("  LIST                         list attendance files on the card");
-  Serial.println("  DUMP <file>                  print one attendance file (name from LIST)");
+  Serial.println("  LIST                         list the session files and the final lists on the card");
+  Serial.println("  DUMP <file>                  print one file (name from LIST)");
+  Serial.println("  FINAL [file]                 build and show the sorted final list (newest session, or the named file)");
   Serial.println("  STUDENTS                     show the first students loaded");
   Serial.println("  RELOAD                       read /students.csv again");
   Serial.println("  INIT                         restart the SD card after a problem");
@@ -820,33 +912,43 @@ void cmdSetTime(const char* arg) {                                // sets the DS
   printTime();                                                    // by printing the clock
 }                                                                 // end of cmdSetTime
 
-void listFiles() {                                                // lists the session files on the card
-  if (!sdOk) { Serial.println("SD card not ready."); return; }    // nothing to list without a card
-  File dir = SD.open(DIR_ATTENDANCE);                             // open the attendance folder
-  if (!dir || !dir.isDirectory()) { Serial.println("No sessions yet."); return; } // folder does not exist yet
+void listFolder(const char* folder, const char* title) {          // lists the files of one folder
+  Serial.printf("%s (%s):\n", title, folder);                     // heading
+  File dir = SD.open(folder);                                     // open the folder
+  if (!dir || !dir.isDirectory()) { Serial.println("  none yet"); return; } // the folder does not exist yet
   int count = 0;                                                  // number of files shown
   File f = dir.openNextFile();                                    // first entry of the folder
   while (f) {                                                     // until there are no more entries
     if (!f.isDirectory()) {                                       // only real files, not sub-folders
-      Serial.printf("%s  (%u bytes)\n", f.name(), (unsigned)f.size()); // name and size
+      Serial.printf("  %s  (%u bytes)\n", f.name(), (unsigned)f.size()); // name and size
       count++;                                                    // count it
     }                                                             // end of "real file"
     f = dir.openNextFile();                                       // next entry
   }                                                               // end of the loop
   dir.close();                                                    // close the folder
-  Serial.printf("%d file(s)\n", count);                           // summary
+  Serial.printf("  %d file(s)\n", count);                         // summary
+}                                                                 // end of listFolder
+
+void listFiles() {                                                // lists the session files and the final lists
+  if (!sdOk) { Serial.println("SD card not ready."); return; }    // nothing to list without a card
+  listFolder(DIR_ATTENDANCE, "Session files");                    // the raw session files
+  listFolder(DIR_FINAL, "Final lists");                           // the sorted final lists
 }                                                                 // end of listFiles
 
-void dumpFile(const char* name) {                                 // prints one session file to the serial monitor
+void dumpFile(const char* name) {                                 // prints one file (session file or final list) to the serial monitor
   if (!sdOk) { Serial.println("SD card not ready."); return; }    // need a working card
   if (!name || !*name || strchr(name, '/') || strstr(name, "..")) { // refuse empty names and attempts to leave the folder
     Serial.println("Usage: DUMP <file name shown by LIST>");      // show the right form
     return;                                                       // stop
   }                                                               // end of the name check
   char path[96];                                                  // full path buffer
-  snprintf(path, sizeof(path), "%s/%s", DIR_ATTENDANCE, name);    // /attendance/<name>
-  File f = SD.open(path, FILE_READ);                              // open it for reading
-  if (!f) { Serial.println("File not found."); return; }          // wrong name
+  snprintf(path, sizeof(path), "%s/%s", DIR_ATTENDANCE, name);    // first look in the session folder
+  File f = SD.open(path, FILE_READ);                              // try to open it
+  if (!f) {                                                       // not there: try the final lists
+    snprintf(path, sizeof(path), "%s/%s", DIR_FINAL, name);       // /final/<name>
+    f = SD.open(path, FILE_READ);                                 // try again
+  }                                                               // end of the second try
+  if (!f) { Serial.println("File not found."); return; }         // wrong name
   Serial.printf("----- %s -----\n", name);                        // start marker (copy the lines below it)
   uint8_t buf[128];                                               // read 128 bytes at a time
   while (f.available()) {                                         // until the end of the file
@@ -869,9 +971,22 @@ void showStudents() {                                             // prints the 
       v >>= 4;                                                    // move to the next 4 bits
     }                                                             // end of the conversion
     uid[10] = 0;                                                  // close the text
-    Serial.printf("  %s  %s\n", uid, students[i].name);           // print card and name
+    Serial.printf("  %s  %s  %s  %s\n", uid, students[i].surname, students[i].names, students[i].matricule); // print card, surname, names, matricule
   }                                                               // end of the loop
 }                                                                 // end of showStudents
+
+void cmdFinal(const char* arg) {                                  // FINAL [file]: build and show the sorted final list
+  if (!sdOk) { Serial.println("SD card not ready."); return; }    // need a working card
+  char name[64];                                                  // the session file to use
+  if (arg && *arg) {                                              // a file name was typed
+    if (strchr(arg, '/') || strstr(arg, "..")) { Serial.println("Usage: FINAL [session file name from LIST]"); return; } // refuse paths
+    snprintf(name, sizeof(name), "%s", arg);                      // use it
+  } else if (!findNewestSession(name, sizeof(name))) {            // otherwise use the newest session file
+    Serial.println("No session files yet.");                      // nothing to do
+    return;                                                       // stop
+  }                                                               // end of choosing the file
+  if (!buildFinalList(name, true)) Serial.println("The final list could not be built. Check the file name with LIST."); // build, save and show it
+}                                                                 // end of cmdFinal
 
 void toggleMute() {                                               // switches the buzzer on or off
   muted = !muted;                                                 // flip the flag
@@ -886,7 +1001,7 @@ void handleCommand(char* line) {                                  // runs one ty
     while (*arg == ' ') arg++;                                    // skip extra spaces
   }                                                               // end of "there is an argument"
   for (char* p = line; *p; p++) *p = (char)toupper((unsigned char)*p); // commands work in any letter case
-  if (driveMode && (!strcmp(line, "START") || !strcmp(line, "STOP") || !strcmp(line, "LIST") || !strcmp(line, "DUMP") || !strcmp(line, "RELOAD") || !strcmp(line, "INIT"))) { // commands that need the SD card
+  if (driveMode && (!strcmp(line, "START") || !strcmp(line, "STOP") || !strcmp(line, "LIST") || !strcmp(line, "DUMP") || !strcmp(line, "FINAL") || !strcmp(line, "RELOAD") || !strcmp(line, "INIT"))) { // commands that need the SD card
     Serial.println("Not available in drive mode (the PC owns the SD card). Type REBOOT to leave drive mode."); // explain
     return;                                                       // do nothing else
   }                                                               // end of the drive-mode guard
@@ -898,6 +1013,7 @@ void handleCommand(char* line) {                                  // runs one ty
   else if (!strcmp(line, "STOP")) stopSession();                  // same as button 1 long press
   else if (!strcmp(line, "LIST")) listFiles();                    // list session files
   else if (!strcmp(line, "DUMP")) dumpFile(arg);                  // print one session file
+  else if (!strcmp(line, "FINAL")) cmdFinal(arg);                 // build and show the sorted final list
   else if (!strcmp(line, "STUDENTS")) showStudents();             // show the student list
   else if (!strcmp(line, "RELOAD")) { Serial.printf("%u students loaded\n", (unsigned)(sdOk ? loadStudents() : 0)); } // re-read the list
   else if (!strcmp(line, "INIT")) { Serial.println(mountSd() ? "SD card OK" : "SD card FAILED"); } // restart the card

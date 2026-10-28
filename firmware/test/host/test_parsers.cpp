@@ -4,6 +4,8 @@
 // Build and run:  g++ -std=c++17 -Iinclude test/host/test_parsers.cpp -o t && ./t
 #include <stdio.h>                                                    // printf
 #include <string.h>                                                   // strcmp, strcpy
+#include <algorithm>                                                  // std::sort, like the firmware
+#include <vector>                                                     // std::vector, like the firmware
 #include "parsers.h"                                                  // the code we test
 
 static int failures = 0;                                              // counts failed checks
@@ -41,14 +43,63 @@ int main() {                                                          // test pr
   check(!parseUid10("0A00B2C3DZ", v), "parseUid10 rejects a non-hex character");
 
   StudentRec s;                                                       // result of parseStudentLine
-  char l1[] = "0A00B2C3D4, Tendai Moyo\r\n";                          // a normal line with spaces and a Windows line end
-  check(parseStudentLine(l1, s) && s.id == 0x0A00B2C3D4ULL && !strcmp(s.name, "Tendai Moyo"), "student line is parsed");
-  char l2[] = "uid,name";                                             // the header line
+  char l1[] = "0A00B2C3D4, Moyo , Tendai Simba, 2023-EE-0145\r\n";    // a normal line with spaces and a Windows line end
+  check(parseStudentLine(l1, s) && s.id == 0x0A00B2C3D4ULL && !strcmp(s.surname, "Moyo") && !strcmp(s.names, "Tendai Simba") && !strcmp(s.matricule, "2023-EE-0145"),
+        "student line with surname, names and matricule is parsed");
+  char l2[] = "uid,surname,names,matricule";                          // the header line
   check(!parseStudentLine(l2, s), "header line is skipped");
   char l3[] = "# comment";                                            // a comment line
   check(!parseStudentLine(l3, s), "comment line is skipped");
-  char l4[] = "0A00B2C3D5,Smith, John";                               // a name with a comma
-  check(parseStudentLine(l4, s) && !strcmp(s.name, "Smith  John"), "comma inside a name is replaced by a space");
+  char l4[] = "0A00B2C3D5,Smith,John,AB,CD";                          // a matricule that contains a comma
+  check(parseStudentLine(l4, s) && !strcmp(s.matricule, "AB CD"), "comma inside the last field is replaced by a space");
+  char l5[] = "0A00B2C3D6,Benali,Amina,1234567890ABCDEFGHIJ";         // a matricule longer than 15 characters
+  check(parseStudentLine(l5, s) && strlen(s.matricule) == 15 && !strcmp(s.matricule, "1234567890ABCDE"), "matricule is cut to 15 characters");
+  char l6[] = "0A00B2C3D7,Old Format Name";                           // the old two-field format
+  check(parseStudentLine(l6, s) && !strcmp(s.surname, "Old Format Name") && s.names[0] == 0 && s.matricule[0] == 0, "old UID,Name lines still load");
+  char l7[] = "0A00B2C3D8,Diallo,Fatou";                              // no matricule given
+  check(parseStudentLine(l7, s) && !strcmp(s.names, "Fatou") && s.matricule[0] == 0, "missing matricule is left empty");
+  char l8[] = "NOTAUID123,Diallo,Fatou,1";                            // a bad card number
+  check(!parseStudentLine(l8, s), "line with a bad card number is rejected");
+  char l9[] = "0A00B2C3D9,Ka\tmara,Ibr;ahim,7";                       // tab and semicolon inside fields
+  check(parseStudentLine(l9, s) && !strcmp(s.surname, "Ka mara") && !strcmp(s.names, "Ibr ahim"), "tabs and semicolons inside fields become spaces");
+
+  // ---- sorting ----
+  char k1[48], k2[48];                                                // sort keys
+  foldKey("\xC3\x89" "b\xC3\xA8ne", k1, sizeof(k1));                  // "Ébène" in UTF-8
+  check(!strcmp(k1, "EBENE"), "accents are folded in the sort key (Ébène -> EBENE)");
+  foldKey("dupont", k2, sizeof(k2));                                  // lower case text
+  check(!strcmp(k2, "DUPONT"), "sort key ignores capitals");
+  check(cmpFolded("Dupont", "\xC3\x89" "b\xC3\xA8ne") < 0 && cmpFolded("\xC3\x89" "b\xC3\xA8ne", "Fabre") < 0, "Dupont < Ébène < Fabre");
+
+  // ---- reading session lines ----
+  ListRow r;                                                          // result of parseSessionLine
+  char s1[] = "0A00B2C3D4,Moyo,Tendai,2023-EE-0145,2026-10-27,14:30:03,PRESENT\r\n"; // a normal PRESENT line
+  check(parseSessionLine(s1, r, 0) && !r.unknown && !strcmp(r.uid, "0A00B2C3D4") && !strcmp(r.surname, "Moyo"), "PRESENT line is read");
+  char s2[] = "0A00FFFFFF,UNKNOWN,,,2026-10-27,14:30:08,UNKNOWN";      // an unknown card
+  check(parseSessionLine(s2, r, 1) && r.unknown && !strcmp(r.surname, "UNKNOWN") && r.names[0] == 0, "UNKNOWN line is read");
+  char s3[] = "uid,surname,names,matricule,date,time,result";         // the header of a session file
+  check(!parseSessionLine(s3, r, 2), "session header line is skipped");
+  char s4[] = "# end,2026-10-27,14:35:00,present=1,unknown=1";        // the summary line
+  check(!parseSessionLine(s4, r, 3), "summary line is skipped");
+
+  // ---- the final list order ----
+  std::vector<ListRow> rows;                                          // some rows in tap order
+  const char* src[] = {                                               // the lines, as they would be in a session file
+    "0A00000001,Moyo,Tendai,M1,d,t,PRESENT", "0A00000002,Benali,Amina,M2,d,t,PRESENT", "0A00000003,UNKNOWN,,,d,t,UNKNOWN",
+    "0A00000004,Dupont,Jean Pierre,M4,d,t,PRESENT", "0A00000005,\xC3\x89" "b\xC3\xA8ne,Marie,M5,d,t,PRESENT", "0A00000006,Benali,Aicha,M6,d,t,PRESENT",
+    "0A00000007,UNKNOWN,,,d,t,UNKNOWN"};                              // seven taps
+  for (size_t i = 0; i < sizeof(src) / sizeof(src[0]); i++) {         // read each line
+    char buf[160]; snprintf(buf, sizeof(buf), "%s", src[i]);          // a writable copy
+    ListRow row; if (parseSessionLine(buf, row, (uint16_t)rows.size())) rows.push_back(row); // keep valid rows
+  }                                                                   // end of the loop
+  std::sort(rows.begin(), rows.end(), rowLess);                       // sort like the firmware does
+  const char* expect[] = {"0A00000006", "0A00000002", "0A00000004", "0A00000005", "0A00000001", "0A00000003", "0A00000007"}; // Benali Aicha, Benali Amina, Dupont, Ébène, Moyo, then the unknown cards in tap order
+  bool order = rows.size() == 7;                                      // all seven rows must be there
+  for (size_t i = 0; order && i < 7; i++) order = !strcmp(rows[i].uid, expect[i]); // and in the expected order
+  check(order, "final list: surname order (Benali Aicha, Benali Amina, Dupont, Ébène, Moyo), unknown cards last in tap order");
+  char out[128]; formatListRow(rows[0], out, sizeof(out));            // the first row as text
+  check(!strcmp(out, "0A00000006\tBenali\tAicha\tM6"), "a row is tab-separated: UID, Surname, Name(s), Matricule");
+  check(!strcmp(LIST_HEADER, "UID\tSurname\tName(s)\tMatricule"), "the heading line has the four requested columns");
 
   printf("%s\n", failures ? "SOME TESTS FAILED" : "ALL TESTS PASSED"); // summary
   return failures ? 1 : 0;                                            // exit code for scripts
