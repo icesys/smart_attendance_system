@@ -19,6 +19,7 @@ LIBDIR = '/usr/share/kicad/symbols'
 G = 1.27
 PROJ = 'sas_schematics'
 _libs = {}
+LOCAL = {}   # symbols copied into the project's own library sas_symbols.kicad_sym
 
 
 def libsym(lib, name):
@@ -156,6 +157,9 @@ class Sheet:
     def place(self, lib, name, ref, value, x, y, rot=0, fp='', unit=1, nets=None, nc=(), dnp=False):
         x, y = snap(x), snap(y)
         sym = libsym(lib, name)
+        if name not in LOCAL:
+            LOCAL[name] = copy.deepcopy(sym)
+        lib = 'SAS'
         if (lib, name) not in self.embedded:
             c = copy.deepcopy(sym)
             c.libraryNickname = lib
@@ -370,12 +374,10 @@ def build_middle(out, ru, su):
              fp='Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal', nets={'A': '5V_BOOST', 'K': '5V_SYS'})
     for i, (c, v, n) in enumerate([('C101', '10u', '5V_SYS'), ('C102', '100n', '5V_SYS'), ('C103', '100n', '3V3')]):
         sh.place('Device', 'C', c, v, 290 + 17 * i, 90, fp=CER, nets={1: n, 2: 'GND'})
-    sh.place('Connector_Generic', 'Conn_01x05', 'J103', 'RDM6300 header 1 (TX RX nc GND 5V)', 290, 175,
-             fp='Connector_PinSocket_2.54mm:PinSocket_1x05_P2.54mm_Vertical', nets={1: 'GPIO18', 4: 'GND', 5: '5V_SYS'}, nc=[2, 3])
-    sh.place('Connector_Generic', 'Conn_01x02', 'J104', 'RDM6300 antenna', 290, 225,
-             fp='Connector_PinSocket_2.54mm:PinSocket_1x02_P2.54mm_Vertical', nets={1: 'COIL_A', 2: 'COIL_B'})
+    sh.place('Connector_Generic', 'Conn_01x07', 'J103', 'RDM6300 (TX RX nc GND 5V | ANT1 ANT2)', 290, 190,
+             fp='smart_attendance:MOD_RDM6300', nets={1: 'GPIO18', 4: 'GND', 5: '5V_SYS', 6: 'COIL_A', 7: 'COIL_B'}, nc=[2, 3])
     conn2x8(sh, 'J106', 380, 130, J_MB, 'J_MB (to BOTTOM)')
-    sh.text('RDM6300 TX is 3.2 V: it goes straight to GPIO18 (no resistor needed)', 290, 200)
+    sh.text('RDM6300 TX is 3.2 V: it goes straight to GPIO18 (no resistor needed)', 290, 215)
     sh.text('GPIO map: 1 green LED, 2 red LED, 5 blue LED, 8 SCL, 9 SDA, 10-13 SD, 18 RFID TX, 40/41 buttons, 42 buzzer', 20, 270)
     sh.finish(out)
     return sh
@@ -422,8 +424,8 @@ def build_root(out, ru, sheets):
         x = 30 + i * 125
         s.sheets.append(HierarchicalSheet(position=Position(x, 45, 0), width=100, height=30, fieldsAutoplaced=True,
                                           stroke=Stroke(width=0.1524, type='solid'), fill=ColorRGBA(0, 0, 0, 0), uuid=su,
-                                          sheetName=Property('Sheet name', name, 0, Position(x, 43.5, 0), fx(just='left')),
-                                          fileName=Property('Sheet file', fname, 1, Position(x, 77, 0), fx(just='left')),
+                                          sheetName=Property('Sheetname', name, 0, Position(x, 43.5, 0), fx(just='left')),
+                                          fileName=Property('Sheetfile', fname, 1, Position(x, 77, 0), fx(just='left')),
                                           instances=[HierarchicalSheetProjectInstance(name=PROJ, paths=[
                                               HierarchicalSheetProjectPath(sheetInstancePath='/' + ru, page=str(i + 2))])]))
         txt(desc, x + 2, 82, 1.5)
@@ -457,4 +459,13 @@ if __name__ == '__main__':
         f.write('(fp_lib_table\n  (version 7)\n  (lib (name "smart_attendance")(type "KiCad")(uri "${KIPRJMOD}/smart_attendance.pretty")(options "")(descr "Custom module footprints"))\n)\n')
     with open(os.path.join(base, f'{PROJ}.kicad_pro'), 'w') as f:
         json.dump({'meta': {'filename': f'{PROJ}.kicad_pro', 'version': 1}}, f, indent=2)
+    from kiutils.symbol import SymbolLib as _SL
+    lib = _SL(version='20211014', generator='kiutils')
+    for n in sorted(LOCAL):
+        c = copy.deepcopy(LOCAL[n])
+        c.libraryNickname = None
+        lib.symbols.append(c)
+    lib.to_file(os.path.join(base, 'sas_symbols.kicad_sym'))
+    with open(os.path.join(base, 'sym-lib-table'), 'w') as f:
+        f.write('(sym_lib_table\n  (version 7)\n  (lib (name "SAS")(type "KiCad")(uri "${KIPRJMOD}/sas_symbols.kicad_sym")(options "")(descr "Symbols used by the Smart Attendance System"))\n)\n')
     print('project written to', base)
