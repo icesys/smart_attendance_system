@@ -6,7 +6,11 @@
 #   Matricule registration number, up to 15 characters
 # Do not use commas inside a field. Lines that start with # and the header line below are ignored.
 uid,surname,names,matricule
-0A00B2C3D4,Moyo,Tendai,2023-EE-0145
-0A00B2C3D5,Benali,Amina,2023-EE-0102
-0A00B2C3D6,Dupont,Jean Pierre,2022-EE-0387
-0A00B2C3D7,Ébène,Marie,2023-EE-0210
+02005B4156,Tsongodza,Evidence,23238ZWE13623
+02005B1F7F,Kavenda,Percyslage Tanaka,23238ZWE13645
+0B000282D3,Nzombe,Ebenezer,23238ZWE13651
+350009B10C,Rupiya,Christed,23238ZWE13660
+35000996C6,Runhare,Malvin,23238ZWE13689
+0200558ABE,Matikiti,Brighton,23238ZWE13691
+430087BBBB,Muromba,Takudzwa Givemore,23238ZWE19477
+3C005C3B6A,Mutamiri, Isheanopa Cuthbert, 23238ZWE19481
