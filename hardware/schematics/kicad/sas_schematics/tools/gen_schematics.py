@@ -18,6 +18,7 @@ from kiutils.items.schitems import (SchematicSymbol, LocalLabel, NoConnect, Text
 LIBDIR = '/usr/share/kicad/symbols'
 G = 1.27
 PROJ = 'sas_schematics'
+CUR = {'proj': PROJ, 'file': None}   # overridden when a board is written as its own project
 _libs = {}
 LOCAL = {}   # symbols copied into the project's own library sas_symbols.kicad_sym
 
@@ -137,12 +138,12 @@ class Router:
 # ------------------------------------------------------------------------------------------------ sheet
 class Sheet:
     def __init__(self, file, title, comment, root_uuid, sheet_uuid, labels_only=False):
-        self.proj, self.file, self.labels_only = PROJ, file, labels_only
-        self.root_uuid, self.sheet_uuid = root_uuid, sheet_uuid
+        self.proj, self.file, self.labels_only = CUR['proj'], CUR['file'] or file, labels_only
         s = Schematic.create_new()
         s.version, s.generator, s.uuid = 20230121, 'eeschema', str(uuid.uuid4())
+        self.root_uuid, self.sheet_uuid = (root_uuid or s.uuid), sheet_uuid
         s.paper = PageSettings(paperSize='A3')
-        s.titleBlock = TitleBlock(title=title, date='2026-10-29', revision='0.5',
+        s.titleBlock = TitleBlock(title=title, date='2026-10-29', revision='0.7',
                                   company='Smart Attendance System - by Ice', comments={1: comment})
         self.sch, self.embedded, self.items, self.failed = s, set(), [], []
 
@@ -206,7 +207,7 @@ class Sheet:
                         Property('Footprint', fp, 2, Position(x, y, 0), fx(hide=True)),
                         Property('Datasheet', '~', 3, Position(x, y, 0), fx(hide=True))]
         s.instances = [SymbolProjectInstance(name=self.proj, paths=[
-            SymbolProjectPath(sheetInstancePath='/' + self.root_uuid + '/' + self.sheet_uuid, reference=ref, unit=unit)])]
+            SymbolProjectPath(sheetInstancePath='/' + self.root_uuid + (('/' + self.sheet_uuid) if self.sheet_uuid else ''), reference=ref, unit=unit)])]
         for pp in pins:
             s.pins[pp['num']] = str(uuid.uuid4())
         self.sch.schematicSymbols.append(s)
@@ -306,6 +307,11 @@ RES = 'Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal'
 CER = 'Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm'
 
 
+def add_holes(sh, base):
+    for i in range(4):
+        sh.place('Mechanical', 'MountingHole', f'H{base + i}', 'M3', 40 + 22 * i, 245, fp='MountingHole:MountingHole_3.2mm_M3')
+
+
 def conn2x8(sh, ref, x, y, nets, label, rot=0):
     sh.place('Connector_Generic', 'Conn_02x08_Odd_Even', ref, label, x, y, rot=rot, fp=IDC, nets=nets)
 
@@ -340,6 +346,7 @@ def build_top(out, ru, su):
              fp='smart_attendance:MOD_OLED096', nets={1: 'GND', 2: '3V3', 3: 'SCL', 4: 'SDA'})
     sh.place('Connector_Generic', 'Conn_01x02', 'J3', 'RFID coil 35 x 46', 235, 220, fp=HDR % 2,
              nets={1: 'COIL_A', 2: 'COIL_B'})
+    add_holes(sh, 1)
     sh.finish(out)
     return sh
 
@@ -379,6 +386,7 @@ def build_middle(out, ru, su):
     conn2x8(sh, 'J106', 380, 130, J_MB, 'J_MB (to BOTTOM)')
     sh.text('RDM6300 TX is 3.2 V: it goes straight to GPIO18 (no resistor needed)', 290, 215)
     sh.text('GPIO map: 1 green LED, 2 red LED, 5 blue LED, 8 SCL, 9 SDA, 10-13 SD, 18 RFID TX, 40/41 buttons, 42 buzzer', 20, 270)
+    add_holes(sh, 101)
     sh.finish(out)
     return sh
 
@@ -405,6 +413,7 @@ def build_bottom(out, ru, su):
              fp='Capacitor_THT:CP_Radial_D10.0mm_P5.00mm', nets={1: '5V_BOOST', 2: 'GND'})
     sh.place('Device', 'C', 'C202', '100n', 365, 120, fp=CER, nets={1: '5V_BOOST', 2: 'GND'})
     sh.text('BAT- is NOT ground: it is behind the protection chip of the TP4056 (OUT- is the system ground)', 150, 255)
+    add_holes(sh, 201)
     sh.finish(out)
     return sh
 
@@ -415,7 +424,7 @@ def build_root(out, ru, sheets):
     s = Schematic.create_new()
     s.version, s.generator, s.uuid = 20230121, 'eeschema', ru
     s.paper = PageSettings(paperSize='A3')
-    s.titleBlock = TitleBlock(title='SAS - Smart Attendance System: root sheet', date='2026-10-29', revision='0.5',
+    s.titleBlock = TitleBlock(title='SAS - Smart Attendance System: root sheet', date='2026-10-29', revision='0.7',
                               company='Smart Attendance System - by Ice', comments={1: 'Open the three boards below with a double click'})
     def txt(t, x, y, h=1.8):
         s.texts.append(Text(text=t, position=Position(x, y, 0), effects=fx(h=h), uuid=str(uuid.uuid4())))
@@ -445,8 +454,29 @@ def build_root(out, ru, sheets):
     s.to_file(os.path.join(out, f'{PROJ}.kicad_sch'))
 
 
+def write_libs(base, sym_uri, fp_uri, local):
+    from kiutils.symbol import SymbolLib as _SL
+    with open(os.path.join(base, 'sym-lib-table'), 'w') as f:
+        f.write('(sym_lib_table\n  (version 7)\n  (lib (name "SAS")(type "KiCad")(uri "%s")(options "")(descr "Symbols used by the Smart Attendance System"))\n)\n' % sym_uri)
+    with open(os.path.join(base, 'fp-lib-table'), 'w') as f:
+        f.write('(fp_lib_table\n  (version 7)\n  (lib (name "smart_attendance")(type "KiCad")(uri "%s")(options "")(descr "Custom module footprints"))\n)\n' % fp_uri)
+    with open(os.path.join(base, f'{local}.kicad_pro'), 'w') as f:
+        json.dump({'meta': {'filename': f'{local}.kicad_pro', 'version': 1}}, f, indent=2)
+
+
+def write_symbol_lib(path):
+    from kiutils.symbol import SymbolLib as _SL
+    lib = _SL(version='20211014', generator='kiutils')
+    for n in sorted(LOCAL):
+        c = copy.deepcopy(LOCAL[n])
+        c.libraryNickname = None
+        lib.symbols.append(c)
+    lib.to_file(path)
+
+
 if __name__ == '__main__':
     base = sys.argv[1]
+    pcb = sys.argv[2] if len(sys.argv) > 2 else None
     ru = str(uuid.uuid4())
     sheets = [('TOP', 'top.kicad_sch', str(uuid.uuid4()), 'LEDs, buzzer driver, 2 buttons, OLED, RFID coil'),
               ('MIDDLE', 'middle.kicad_sch', str(uuid.uuid4()), 'ESP32-S3 sockets, RDM6300, 5 V Schottky, both cables'),
@@ -455,17 +485,15 @@ if __name__ == '__main__':
     build_top(base, ru, sheets[0][2])
     build_middle(base, ru, sheets[1][2])
     build_bottom(base, ru, sheets[2][2])
-    with open(os.path.join(base, 'fp-lib-table'), 'w') as f:
-        f.write('(fp_lib_table\n  (version 7)\n  (lib (name "smart_attendance")(type "KiCad")(uri "${KIPRJMOD}/smart_attendance.pretty")(options "")(descr "Custom module footprints"))\n)\n')
-    with open(os.path.join(base, f'{PROJ}.kicad_pro'), 'w') as f:
-        json.dump({'meta': {'filename': f'{PROJ}.kicad_pro', 'version': 1}}, f, indent=2)
-    from kiutils.symbol import SymbolLib as _SL
-    lib = _SL(version='20211014', generator='kiutils')
-    for n in sorted(LOCAL):
-        c = copy.deepcopy(LOCAL[n])
-        c.libraryNickname = None
-        lib.symbols.append(c)
-    lib.to_file(os.path.join(base, 'sas_symbols.kicad_sym'))
-    with open(os.path.join(base, 'sym-lib-table'), 'w') as f:
-        f.write('(sym_lib_table\n  (version 7)\n  (lib (name "SAS")(type "KiCad")(uri "${KIPRJMOD}/sas_symbols.kicad_sym")(options "")(descr "Symbols used by the Smart Attendance System"))\n)\n')
+    write_symbol_lib(os.path.join(base, 'sas_symbols.kicad_sym'))
+    write_libs(base, '${KIPRJMOD}/sas_symbols.kicad_sym', '${KIPRJMOD}/smart_attendance.pretty', PROJ)
     print('project written to', base)
+    if pcb:   # one stand-alone project per board, sharing the libraries of the folder above
+        for name, fn in (('top', build_top), ('middle', build_middle), ('bottom', build_bottom)):
+            CUR['proj'], CUR['file'] = f'pcb_{name}', f'pcb_{name}'
+            d = os.path.join(pcb, f'pcb_{name}')
+            os.makedirs(d, exist_ok=True)
+            fn(d, None, None)
+            write_libs(d, '${KIPRJMOD}/../sas_symbols.kicad_sym', '${KIPRJMOD}/../smart_attendance.pretty', f'pcb_{name}')
+        write_symbol_lib(os.path.join(pcb, 'sas_symbols.kicad_sym'))
+        print('board projects written to', pcb)

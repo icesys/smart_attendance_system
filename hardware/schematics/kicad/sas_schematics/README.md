@@ -1,4 +1,4 @@
-# sas_schematics: Smart Attendance System, electrical schematics (v0.6)
+# sas_schematics: Smart Attendance System, electrical schematics (v0.7)
 
 Open `sas_schematics.kicad_pro` in KiCad 7 or newer (tested here with 7.0.11; you use 10, which converts the files when you save).
 The root sheet shows the three boards; double-click a box to open it.
@@ -8,6 +8,8 @@ The root sheet shows the three boards; double-click a box to open it.
 | TOP | `top.kicad_sch` | 1-99 |
 | MIDDLE | `middle.kicad_sch` | 101-199 |
 | BOTTOM | `bottom.kicad_sch` | 201-299 |
+
+Each sheet also carries its 4 M3 mounting holes (H1-H4, H101-H104, H201-H204) so they exist in the PCB too.
 
 The sheets are separate boards: nothing joins them inside KiCad. The two ribbon cables use the same pin numbers at both ends (TOP J1 = MIDDLE J105, MIDDLE J106 = BOTTOM J201); the pinouts are listed on the root sheet.
 
