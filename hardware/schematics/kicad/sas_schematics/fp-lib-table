@@ -1,4 +1,0 @@
-(fp_lib_table
-  (version 7)
-  (lib (name "smart_attendance")(type "KiCad")(uri "${KIPRJMOD}/smart_attendance.pretty")(options "")(descr "Custom module footprints"))
-)
