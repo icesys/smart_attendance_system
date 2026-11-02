@@ -176,6 +176,7 @@ def build(name, base, j106=None):
     else:
         greedy(pcb, cfg)
     pcb.text(cfg['title'], 47.5, -2.5, 1.5)
+    nfab = pcb.place_refs()
     if name == 'top':
         pcb.silk_rect(8, 22, 54, 57)
         pcb.text('RFID COIL 35 x 46 - NO COPPER', 31, 39.5, 1.2)
@@ -185,7 +186,7 @@ def build(name, base, j106=None):
         pcb.text('ESP32-S3 (USB-C ports on the left edge)', 37.5, 17, 1.0)
     bad = pcb.check(cfg['keepouts'], allow={('J3', 0), ('J101', 0), ('J102', 0)})
     pcb.save(os.path.join(d, f'pcb_{name}.kicad_pcb'))
-    print(f'== {name}: {len(pcb.placed)} footprints placed', 'OK, no overlaps' if not bad else bad)
+    print(f'== {name}: {len(pcb.placed)} footprints placed, {nfab} reference(s) moved to F.Fab,', 'OK, no overlaps' if not bad else bad)
     return pcb
 
 

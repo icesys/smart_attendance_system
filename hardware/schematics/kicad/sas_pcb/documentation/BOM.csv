@@ -1,36 +1,36 @@
-Qty,References,Value,Footprint,Board
-1,C201,"470u 10V (10 mm, 5 mm pins)",Capacitor_THT:CP_Radial_D10.0mm_P5.00mm,BOTTOM
-1,J201,J_MB (to MIDDLE),Connector_IDC:IDC-Header_2x08_P2.54mm_Vertical,BOTTOM
-1,J202,Battery 18650 (under the board),Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical,BOTTOM
-1,J203,TP4056 (OUT+ B+ B- OUT-),smart_attendance:MOD_TP4056,BOTTOM
-1,J204,MT3608 (VIN+ VIN- VOUT+ VOUT-),smart_attendance:MOD_MT3608,BOTTOM
-1,J205,microSD module (GND VCC MISO MOSI SCK CS),smart_attendance:MOD_SD_6PIN,BOTTOM
-1,J206,DS3231 (32K SQW SCL SDA VCC GND),smart_attendance:MOD_DS3231_6PIN,BOTTOM
-1,SW201,Slide switch 6-pin,smart_attendance:SW_Slide_6pin_2mm,BOTTOM
-5,C202 C102 C103 C1 C3,100n,Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm,BOTTOM/MIDDLE/TOP
-12,H201 H202 H203 H204 H101 H102 H103 H104 H1 H2 H3 H4,M3 mounting hole,MountingHole:MountingHole_3.2mm_M3,BOTTOM/MIDDLE/TOP
-1,D101,Schottky 1A (1N5819),Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal,MIDDLE
-1,J101,ESP32-S3 row 1 (USB end at the top),Connector_PinSocket_2.54mm:PinSocket_1x22_P2.54mm_Vertical,MIDDLE
-1,J102,ESP32-S3 row 2,Connector_PinSocket_2.54mm:PinSocket_1x22_P2.54mm_Vertical,MIDDLE
-1,J103,RDM6300 (TX RX nc GND 5V | ANT1 ANT2),smart_attendance:MOD_RDM6300,MIDDLE
-1,J105,J_TM (to TOP),Connector_IDC:IDC-Header_2x08_P2.54mm_Vertical,MIDDLE
-1,J106,J_MB (to BOTTOM),Connector_IDC:IDC-Header_2x08_P2.54mm_Vertical,MIDDLE
-2,C101 C2,10u,Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm,MIDDLE/TOP
-1,BZ1,Buzzer 12 mm (8 mm pins),smart_attendance:Buzzer_12mm_P8mm,TOP
-1,D1,blue (power LED),LED_THT:LED_D5.0mm,TOP
-1,D2,green,LED_THT:LED_D5.0mm,TOP
-1,D3,red,LED_THT:LED_D5.0mm,TOP
-1,D4,1N4148,Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal,TOP
-1,J1,J_TM (to MIDDLE),Connector_IDC:IDC-Header_2x08_P2.54mm_Vertical,TOP
-1,J2,OLED 0.96in (GND VCC SCL SDA),smart_attendance:MOD_OLED096,TOP
-1,J3,RFID coil 35 x 46,Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical,TOP
-1,JP1,BUZ supply (1-2 = 3V3),Jumper:SolderJumper-3_P1.3mm_Bridged12_RoundedPad1.0x1.5mm,TOP
-1,Q1,2N2222A,Package_TO_SOT_THT:TO-92_Inline,TOP
-3,R1 R2 R3,220,Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal,TOP
-1,R4,1k,Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal,TOP
-1,R5,100k,Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal,TOP
-1,SW1,Button 1 (session),Button_Switch_THT:SW_PUSH_6mm,TOP
-1,SW2,Button 2 (info),Button_Switch_THT:SW_PUSH_6mm,TOP
+Qty,References,Value,Footprint (in smart_attendance.pretty),Board
+1,C201,"470u 10V (10 mm, 5 mm pins)",CP_Radial_D10.0mm_P5.00mm,BOTTOM
+1,J201,J_MB (to MIDDLE),IDC-Header_2x08_P2.54mm_Vertical,BOTTOM
+1,J202,Battery 18650 (under the board),PinHeader_1x02_P2.54mm_Vertical,BOTTOM
+1,J203,TP4056 (OUT+ B+ B- OUT-),MOD_TP4056,BOTTOM
+1,J204,MT3608 (VIN+ VIN- VOUT+ VOUT-),MOD_MT3608,BOTTOM
+1,J205,microSD module (GND VCC MISO MOSI SCK CS),MOD_SD_6PIN,BOTTOM
+1,J206,DS3231 (32K SQW SCL SDA VCC GND),MOD_DS3231_6PIN,BOTTOM
+1,SW201,Slide switch 6-pin,SW_Slide_6pin_2mm,BOTTOM
+5,C202 C102 C103 C1 C3,100n,C_Disc_D5.0mm_W2.5mm_P5.00mm,BOTTOM/MIDDLE/TOP
+12,H201 H202 H203 H204 H101 H102 H103 H104 H1 H2 H3 H4,M3 mounting hole,MountingHole_3.2mm_M3,BOTTOM/MIDDLE/TOP
+1,D101,Schottky 1A (1N5819),D_DO-41_SOD81_P10.16mm_Horizontal,MIDDLE
+1,J101,ESP32-S3 row 1 (USB end at the top),PinSocket_1x22_P2.54mm_Vertical,MIDDLE
+1,J102,ESP32-S3 row 2,PinSocket_1x22_P2.54mm_Vertical,MIDDLE
+1,J103,RDM6300 (TX RX nc GND 5V | ANT1 ANT2),MOD_RDM6300,MIDDLE
+1,J105,J_TM (to TOP),IDC-Header_2x08_P2.54mm_Vertical,MIDDLE
+1,J106,J_MB (to BOTTOM),IDC-Header_2x08_P2.54mm_Vertical,MIDDLE
+2,C101 C2,10u,C_Disc_D5.0mm_W2.5mm_P5.00mm,MIDDLE/TOP
+1,BZ1,Buzzer 12 mm (8 mm pins),Buzzer_12mm_P8mm,TOP
+1,D1,blue (power LED),LED_D5.0mm,TOP
+1,D2,green,LED_D5.0mm,TOP
+1,D3,red,LED_D5.0mm,TOP
+1,D4,1N4148,D_DO-35_SOD27_P7.62mm_Horizontal,TOP
+1,J1,J_TM (to MIDDLE),IDC-Header_2x08_P2.54mm_Vertical,TOP
+1,J2,OLED 0.96in (GND VCC SCL SDA),MOD_OLED096,TOP
+1,J3,RFID coil 35 x 46,PinHeader_1x02_P2.54mm_Vertical,TOP
+1,JP1,BUZ supply (1-2 = 3V3),SolderJumper-3_P1.3mm_Bridged12_RoundedPad1.0x1.5mm,TOP
+1,Q1,2N2222A,TO-92_Inline,TOP
+3,R1 R2 R3,220,R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal,TOP
+1,R4,1k,R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal,TOP
+1,R5,100k,R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal,TOP
+1,SW1,Button 1 (session),SW_PUSH_6mm,TOP
+1,SW2,Button 2 (info),SW_PUSH_6mm,TOP
 
 "Not in the schematic, to buy or have:"
 2,16-conductor flat ribbon cable with two 2x8 IDC sockets each (about 10 cm)

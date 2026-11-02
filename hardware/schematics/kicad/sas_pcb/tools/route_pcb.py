@@ -220,7 +220,7 @@ def add_gnd_pours(bd, gnd):
     poly = [Position(P.OX + a, P.OY + b) for a, b in ((ins, ins), (P.W - ins, ins), (P.W - ins, P.H - ins), (ins, P.H - ins))]
     for layer in LAY:
         bd.zones.append(Zone(net=gnd[0], netName=gnd[1], layers=[layer], tstamp=str(uuid.uuid4()), hatch=Hatch(style='edge', pitch=0.5),
-                             connectPads='thermal_reliefs' if False else None, clearance=CLEAR, minThickness=0.25,
+                             connectPads='yes', clearance=CLEAR, minThickness=0.25,
                              fillSettings=FillSettings(yes=True, thermalGap=0.4, thermalBridgeWidth=0.5),
                              polygons=[ZonePolygon(coordinates=poly)]))
 

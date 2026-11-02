@@ -111,13 +111,56 @@ class PCB:
         self.placed[ref] = (wx0, wy0, wx1, wy1)
         self.info[ref] = (name, round(wx1 - wx0, 1), round(wy1 - wy0, 1))
 
+    def place_refs(self):
+        """Reference designators on the silkscreen only where there is free room inside the board; otherwise on F.Fab."""
+        taken, moved = [], 0
+        def hit(a, b, m=0.0):
+            return a[0] < b[2] + m and a[2] > b[0] - m and a[1] < b[3] + m and a[3] > b[1] - m
+        for fp in self.b.footprints:
+            texts = [g for g in fp.graphicItems if isinstance(g, FpText) and g.type in ('reference', 'value')]
+            ref = [g.text for g in texts if g.type == 'reference'][0]
+            if ref.startswith('H'):
+                for g in texts:
+                    g.hide = True
+                continue
+            x0, y0, x1, y1 = self.placed[ref]
+            n = len(ref)
+            w, h = n * 0.85 + 0.5, 1.6
+            cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+            cands = [(cx, y0 - 0.4 - h / 2), (cx, y1 + 0.4 + h / 2), (x0 - 0.4 - w / 2, cy), (x1 + 0.4 + w / 2, cy)]
+            ok = None
+            for qx, qy in cands:
+                bx = (qx - w / 2, qy - h / 2, qx + w / 2, qy + h / 2)
+                if bx[0] < 0.8 or bx[1] < 0.8 or bx[2] > W - 0.8 or bx[3] > H - 0.8:
+                    continue
+                if any(hit(bx, bb, 0.3) for r2, bb in self.placed.items() if r2 != ref and not r2.startswith('H')):
+                    continue
+                if any(hit(bx, t_) for t_ in taken):
+                    continue
+                if any(math.hypot(max(bx[0] - hx, 0, hx - bx[2]), max(bx[1] - hy, 0, hy - bx[3])) < 3.6 for hx, hy in HOLES):
+                    continue
+                ok = (qx, qy, bx)
+                break
+            g = [g for g in texts if g.type == 'reference'][0]
+            g.effects = Effects(font=Font(height=1.0, width=1.0, thickness=0.15))
+            if ok:
+                dx, dy = ok[0] - (fp.position.X - OX), ok[1] - (fp.position.Y - OY)
+                lx, ly = rot(dx, dy, -(fp.position.angle or 0))
+                g.position = Position(round(lx, 4), round(ly, 4), 0)
+                g.layer = 'F.SilkS'
+                taken.append(ok[2])
+            else:
+                g.layer = 'F.Fab'
+                moved += 1
+        return moved
+
     def outline(self):
         self.b.graphicItems.append(GrRect(start=Position(OX, OY), end=Position(OX + W, OY + H), layer='Edge.Cuts', width=0.1, fill='none'))
 
-    def silk_rect(self, x0, y0, x1, y1, layer='F.SilkS'):
+    def silk_rect(self, x0, y0, x1, y1, layer='Dwgs.User'):
         self.b.graphicItems.append(GrRect(start=Position(OX + x0, OY + y0), end=Position(OX + x1, OY + y1), layer=layer, width=0.15, fill='none'))
 
-    def text(self, t, x, y, size=1.5, layer='F.SilkS'):
+    def text(self, t, x, y, size=1.5, layer='Dwgs.User'):
         self.b.graphicItems.append(GrText(text=t, position=Position(OX + x, OY + y, 0), layer=layer,
                                           effects=Effects(font=Font(height=size, width=size, thickness=0.2))))
 
