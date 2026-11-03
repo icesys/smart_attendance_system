@@ -1,4 +1,4 @@
-<h1 align="center">Smart Attendance System</h1>
+<h1 align="center">Smart Attendance System - by Ice</h1>
 
 <p align="center">
   <img src="./media/photos/concept_device_in_hand.jpg" alt="Concept image of the Smart Attendance System held at a lecture-hall door" width="650">
@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <b>Mini-project · Faculty of Electronics and Computer Science, USTHB · Electronics, 3rd year Bachelor (LMD) · 2026/2027</b><br>
+  <b>Personal embedded-systems project</b><br>
   A battery-powered, cable-free device that records lecture attendance when students tap their existing RFID student card.
 </p>
 
@@ -29,16 +29,10 @@
 
 Attendance in lecture halls is still often taken on a sheet of paper. That wastes time, invites mistakes and fraud (signing for an absent friend), and the data has to be typed in again afterwards.
 
-Every student already carries a **student card with an RFID chip**, used daily at the university restaurant: you lay it flat on a small reader and the visit is recorded. **Smart Attendance System** brings the same gesture to lectures. At the end of the session the lecturer stands at the door with the device, and each student taps their card on the way out. The device identifies the student, time-stamps the tap, ignores repeated taps and saves everything to a microSD card. Afterwards the lecturer plugs it into a PC, where the card appears as a **USB drive** holding ready-to-use CSV files.
-
-| | |
-|---|---|
-| **Team** | TSONGODZA Evidence · MANDEBVU Langelihle Sasha |
-| **Supervisor** | Mr BOUCHEFRA |
-| **Institution** | USTHB, Faculty of Electronics and Computer Science, Electronics L3 (LMD) |
+Every student already carries a **student card with an RFID chip**, used daily at the student restaurant: you lay it flat on a small reader and the visit is recorded. I built **Smart Attendance System** to bring the same gesture to lectures. At the end of the session the lecturer stands at the door with the device, and each student taps their card on the way out. The device identifies the student, time-stamps the tap, ignores repeated taps and saves everything to a microSD card. Afterwards the lecturer plugs it into a PC, where the card appears as a **USB drive** holding ready-to-use CSV files.
 
 > [!NOTE]
-> Status: prototype, firmware, schematics and the three PCBs (routed, Gerber files generated) are done. Manufacturing, assembly and final tests are the next steps.
+> Status: the prototype, the firmware, the schematics and the three PCBs (routed, Gerber files generated) are done. Manufacturing, assembly and final tests are the next steps.
 
 ---
 
@@ -228,10 +222,10 @@ g++ -std=c++17 -Iinclude test/host/test_parsers.cpp -o t && ./t    # unit tests 
 
 | Document | Content |
 |---|---|
-| [`documentation/rapport_final/`](documentation/rapport_final/) | **Final report** in French and English (Word + PDF): 13 pages + 3 pages of appendix |
+| [`documentation/rapport_final/`](documentation/rapport_final/) | **Project report** in French and English (Word + PDF) |
 | `documentation/Smart_Attendance_Code_Flowcharts.pdf` | Flowcharts of the firmware |
 | `documentation/Breadboard_Assembly_Guide_No_Soldering.pdf` | Breadboard prototype guide |
-| `documentation/Resume_mini_projet_smart_attendance_system.pdf` | Project summary (French) |
+| `documentation/Resume_mini_projet_smart_attendance_system.pdf` | Short project summary (French) |
 | `documentation/requirements.md`, `decisions_log.md`, `test_plan.md`, `project_plan.md` | Project management documents |
 | `hardware/schematics/kicad/sas_pcb/documentation/` | BOM, connector table, power distribution |
 
@@ -290,7 +284,7 @@ g++ -std=c++17 -Iinclude test/host/test_parsers.cpp -o t && ./t    # unit tests 
 - [x] Unit tests of the parsers (26 passing)
 - [x] KiCad schematics (per board, three boards with cables, whole system as one circuit)
 - [x] Three PCBs placed, routed and checked; Gerber files generated
-- [x] Final report (French and English), pending the test results
+- [x] Project report (French and English), pending the test results
 - [ ] PCB manufacturing and assembly
 - [ ] Full test plan on the real boards
 - [ ] FreeCAD enclosure
@@ -299,4 +293,4 @@ g++ -std=c++17 -Iinclude test/host/test_parsers.cpp -o t && ./t    # unit tests 
 ---
 
 <h1 align="center">DISCLAIMER</h1>
-<h4 align="center">Educational embedded-systems project. It records card taps only and is not a secure identity verification system.</h4>
+<h4 align="center">Personal embedded-systems project. It records card taps only and is not a secure identity verification system.</h4>
