@@ -5,6 +5,8 @@
 #   Names     first name(s), up to 31 characters
 #   Matricule registration number, up to 15 characters
 # Do not use commas inside a field. Lines that start with # and the header line below are ignored.
+# A card that is not in the list is added by itself as UID,UNKNOWN,UNKNOWN,UNKNOWN: replace the three UNKNOWN
+# with the student's details (it counts as an unknown card until then), then eject the drive or type RELOAD.
 uid,surname,names,matricule
 02005B4156,Tsongodza,Evidence,23238ZWE13623
 02005B1F7F,Kavenda,Percyslage Tanaka,23238ZWE13645
