@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "SAS")(type "KiCad")(uri "${KIPRJMOD}/sas_complete_symbols.kicad_sym")(options "")(descr "Smart Attendance System symbols + module blocks"))
+)
