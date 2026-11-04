@@ -35,9 +35,10 @@ Qty,References,Value,Footprint (in smart_attendance.pretty),Board
 "Not in the schematic, to buy or have:"
 2,16-conductor flat ribbon cable with two 2x8 IDC sockets each (about 10 cm)
 1,"18650 cell with 1-cell holder (20 x 75 mm), wires to J202"
-12,M3 screws and standoff tubes (4 per board gap; length decided by you)
+12,M3 screws and standoff tubes (4 per board; length to suit the stack)
 1,"ESP32-S3 dev board, 2 x 22 pin, 25.4 mm between rows"
 1,RDM6300 module with 5-pin and 2-pin headers
 1,125 kHz coil 35 x 46 mm
 1,CR2032 for the DS3231 (remove its charge resistor)
-1,Schottky diode 1 A (for example 1N5819)
+1,microSD card 8-16 GB (FAT32)
+1,"Female headers for the plug-in modules (OLED, microSD, DS3231, RDM6300, TP4056, MT3608)"

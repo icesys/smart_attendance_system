@@ -1,0 +1,17 @@
+# KiCad: local history, lock files, backups, caches
+.history/
+*.lck
+*-backups/
+*.bak
+fp-info-cache
+_autosave-*
+\#auto_saved_files#
+
+# Office / OS temporary files
+~$*
+.~lock.*#
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/

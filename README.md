@@ -120,7 +120,7 @@ Cable 1 joins TOP J1 ↔ MIDDLE J105; cable 2 joins MIDDLE J106 ↔ BOTTOM J201.
 | `sas_schematics/` | One sheet per board (hierarchical), shared symbol and footprint libraries |
 | `sas_pcb/` | The three routed PCBs, BOM, connector table, power notes, 1:1 printouts |
 
-Gerber and drill files for manufacturing are in `hardware/gerbers/` (one zip per board). All schematic nets were checked by script against the routed PCBs (29 nets, identical).
+Gerber and drill files for manufacturing are in `hardware/gerbers/` (one folder per board; zip each folder to upload it). The schematic nets match the routed PCBs (29 nets, identical). Datasheets of every chip and module are in `hardware/datasheets/`.
 
 ---
 
@@ -164,7 +164,8 @@ PlatformIO project (Arduino framework) in [`firmware/`](firmware/):
 | `include/config.h` | Every pin, timing and option in one place |
 | `include/parsers.h` | Plain C++ helpers (RDM6300 frames, CSV lines, sorting), testable on a PC |
 | `test/host/test_parsers.cpp` | 26 unit tests for `parsers.h` (run on the PC) |
-| `sketches/D1 … D8` | Step-by-step hardware tests: serial, I2C scan, clock, microSD, reader, LEDs/buzzer/buttons, OLED |
+| `sketches/D1 … D9` | Step-by-step hardware tests: serial, I2C scan, clock, microSD, reader, LEDs/buzzer/buttons, card read, OLED, clock diagnosis |
+| `tools/set_clock.py` | Sets the DS3231 to the PC time over the serial port |
 | `data/students.csv` | Template of the student list to copy to the microSD card |
 
 **Files on the microSD card**
@@ -226,8 +227,15 @@ g++ -std=c++17 -Iinclude test/host/test_parsers.cpp -o t && ./t    # unit tests 
 | `documentation/Smart_Attendance_Code_Flowcharts.pdf` | Flowcharts of the firmware |
 | `documentation/Breadboard_Assembly_Guide_No_Soldering.pdf` | Breadboard prototype guide |
 | `documentation/Resume_mini_projet_smart_attendance_system.pdf` | Short project summary (French) |
+| `documentation/bill_of_materials.md` | All parts, grouped by function, with board references |
+| `documentation/assembly_guide.md` | PCB soldering order, stacking and first power-on |
+| `documentation/system_architecture.md` | Blocks, power rails, data flow |
 | `documentation/requirements.md`, `decisions_log.md`, `test_plan.md`, `project_plan.md` | Project management documents |
-| `hardware/schematics/kicad/sas_pcb/documentation/` | BOM, connector table, power distribution |
+| `documentation/smart_attendance_parts_and_pcb.pdf` | Early shopping list (October 2026, before the card type was known) |
+| `simulation/power_budget.md` | Current per part, battery life, charge time (estimates) |
+| `hardware/schematics/kicad/sas_pcb/documentation/` | BOM per reference, connector table, power distribution |
+| `hardware/datasheets/` | Datasheets of the chips and modules |
+| `media/diagrams/` | Block diagram, flowcharts, schematic and PCB images |
 
 ---
 
@@ -237,7 +245,8 @@ g++ -std=c++17 -Iinclude test/host/test_parsers.cpp -o t && ./t    # unit tests 
 |---|---|
 | VS Code + PlatformIO | Firmware |
 | KiCad | Schematics and PCBs |
-| Python (kiutils, matplotlib, python-docx), Graphviz | Schematic/PCB generation and checks, report figures and report |
+| Python (pyserial) | `set_clock.py` (sets the clock from the PC) |
+| Word / LibreOffice | Project report |
 | FreeCAD | Enclosure (planned) |
 
 ---
@@ -246,20 +255,20 @@ g++ -std=c++17 -Iinclude test/host/test_parsers.cpp -o t && ./t    # unit tests 
 
 | Path | Content |
 |---|---|
-| `documentation/` | Final report (FR/EN), flowcharts, guides, requirements, decisions log, test plan |
+| `documentation/` | Final report (FR/EN), flowcharts, BOM, assembly guide, requirements, decisions log, test plan |
 | `firmware/` | PlatformIO project for the ESP32-S3 |
 | `hardware/schematics/kicad/` | KiCad projects: `sas_complete`, `sas_full_system`, `sas_schematics`, `sas_pcb` |
 | `hardware/gerbers/` | Gerber and drill files of the three boards |
 | `hardware/datasheets/` | Datasheets |
 | `simulation/` | Calculations (power budget, battery life) |
-| `media/` | Photos, videos, diagrams |
+| `media/` | Concept images, diagrams, (later) photos and demo video |
 
 ---
 
 <h2>💡 Lessons Learned</h2>
 
 - **Identify before you buy:** two phones were enough to rule out 13.56 MHz, so only one reader type had to be bought.
-- **Prototype module by module:** the D1–D8 test sketches made every fault easy to locate before the full firmware ran.
+- **Prototype module by module:** the D1–D9 test sketches made every fault easy to locate before the full firmware ran.
 - **Keep the PCB scope realistic:** the ESP32-S3 dev board on sockets and ready-made modules removed the hardest parts of the design.
 - **Print 1:1 before ordering:** hand-measured module footprints were checked by laying the real modules on a paper printout.
 - **Battery modules have traps:** B− of a protected TP4056 is not ground, and the DS3231 module charges its coin cell unless its resistor is removed.

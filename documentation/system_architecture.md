@@ -1,31 +1,51 @@
 # System Architecture
 
+![Block diagram](../media/diagrams/block_diagram.png)
+
 ```mermaid
 flowchart LR
-    CARD[Student card] -->|125 kHz field| RFID[RFID reader module]
-    RFID -->|UART or similar| MCU[ESP32-S3 dev board]
-    MCU --> STORE[(Storage: TBD)]
-    MCU -.->|optional| FB[LED / buzzer]
-    BAT[2 x 18650 in parallel] --> PWR[Power management: TBD]
-    PWR --> MCU
-    PWR --> RFID
-    STORE -->|after lecture| PC[PC]
+    CARD[Student card 125 kHz] -.->|field| COIL[Antenna coil]
+    COIL --> RFID[RDM6300 reader]
+    RFID -->|UART1 9600 baud| MCU[ESP32-S3 N16R8]
+    BTN[2 buttons] -->|GPIO40/41| MCU
+    RTC[DS3231 clock] <-->|I2C 0x68| MCU
+    MCU -->|I2C 0x3C| OLED[OLED 0.96in]
+    MCU <-->|SPI| SD[(microSD)]
+    MCU -->|GPIO1/2/5, 42| FB[3 LEDs + buzzer]
+    MCU <-->|native USB-C| PC[Lecturer's PC]
+    BAT[18650] --> CHG[TP4056] --> SW[Switch] --> BOOST[MT3608 5 V] --> D[Schottky] -->|5V_SYS| MCU
 ```
 
 ## Blocks
-| Block | Function | Status |
+| Block | Part | Function |
 |---|---|---|
-| RFID reader | Energizes the card and outputs its identifier | Purchased, to be tested |
-| ESP32-S3 | Reads the reader, timestamps, stores, serves data to the PC | Owned |
-| Storage | Keeps the attendance file | To decide |
-| Power | Charging, protection and regulation of the 18650 pair | To decide |
-| Feedback | Confirms each tap to the student | Optional |
+| Card reading | RDM6300 + 35 × 46 mm coil | Powers the card with a 125 kHz field, sends a 14-byte frame per read |
+| Processing | ESP32-S3 N16R8 dev board | Checks the frame, looks up the student, time-stamps, stores, drives the feedback and the USB link |
+| Time | DS3231 + CR2032 | Date and time, kept when the power is off |
+| Storage | microSD (FAT32) | `students.csv`, one CSV per session, one sorted final list per session |
+| Feedback | 3 LEDs, buzzer (2N2222A), OLED | Present, unknown, duplicate, error, session state |
+| Controls | 2 push buttons | Button 1: start (short) / stop (long). Button 2: info (short) / USB drive (hold 3 s) |
+| Power | 18650, TP4056, switch, MT3608, 1N5819 | USB-C charging, protection, 5 V rail; USB and battery share 5V_SYS through the diode |
+
+## Power rails
+| Rail | Voltage | Feeds |
+|---|---|---|
+| BAT+ / CHG_OUT+ / SW_OUT | 3.0–4.2 V | MT3608 input |
+| 5V_BOOST | 5.0 V | Diode D101 (via cable 2 pins 1 and 3) |
+| 5V_SYS | ≈ 4.7 V on battery, ≈ 5 V on USB | ESP32-S3 5V pin, RDM6300, microSD module, buzzer option |
+| 3V3 | 3.3 V (ESP32 board regulator) | OLED, DS3231, LEDs, buzzer (default) |
+| GND | TP4056 OUT− | Everything |
 
 ## Data flow
-1. Card enters the reader field and the reader outputs its identifier.
-2. The ESP32-S3 reads it, adds the time, checks for duplicates.
-3. The record is written to storage.
-4. After the lecture the data is transferred to the PC.
+1. The lecturer starts a session (button 1 or `START`). A new file `/attendance/YYYYMMDD_hhmmss.csv` is opened.
+2. A card enters the field; the RDM6300 sends its frame; the ESP32-S3 checks start/end bytes and the XOR checksum.
+3. The UID is looked up in `/students.csv`. Already seen in this session → duplicate. Not in the list → unknown (and added to `students.csv` as an `UNKNOWN` line to fill in).
+4. The time is read from the DS3231 and one line is appended to the session file.
+5. LEDs, buzzer and OLED show the result.
+6. A long press on button 1 ends the session and writes `/final/YYYYMMDD_hhmmss.txt`, sorted by surname, tab-separated.
+7. Plugged into a PC on the native USB-C port, the microSD appears as a USB drive. After an eject, the firmware restarts to read the card cleanly.
 
-## Final PCB
-The ESP32-S3 dev board is mounted on the PCB through a footprint (no chip-level ESP32 design). Other parts can go on the board as chips where this stays simple.
+## Physical layout
+Three stacked 95 × 60 mm boards (TOP: interface and coil, MIDDLE: ESP32-S3 and RDM6300, BOTTOM: power, microSD, clock), joined by two 16-wire ribbon cables. Pinouts: [`hardware/schematics/kicad/sas_pcb/documentation/Connector_Table.md`](../hardware/schematics/kicad/sas_pcb/documentation/Connector_Table.md).
+
+Firmware flowcharts: [`Smart_Attendance_Code_Flowcharts.pdf`](Smart_Attendance_Code_Flowcharts.pdf) and `media/diagrams/flowchart_*.png`.
