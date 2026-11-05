@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Smart Attendance System - Poster 2 x A0</title>
+<style>
+  /* UN SEUL poster de 1667 x 1189 mm, imprimé sur deux feuilles A0 (841 x 1189 mm).
+     La feuille de droite recouvre les 15 derniers mm de la feuille de gauche (bande de collage). */
+  @page { size: 1667mm 1189mm; margin: 0; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ font-family:"Liberation Sans", Arial, Helvetica, sans-serif; color:#2b2f33; font-size:26pt; line-height:1.3;
+        background:#fff; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .poster{ width:1667mm; height:1189mm; background:#fff; display:flex; flex-direction:column; position:relative; overflow:hidden; }
+
+  /* ----- en-tête (continu sur toute la largeur) ----- */
+  .top{ height:168mm; flex:none; position:relative; padding:11mm 26mm 0; border-bottom:4mm solid #2a5d9f; }
+  .top::after{ content:""; position:absolute; left:0; right:0; bottom:-6mm; height:2mm; background:#9aa5b1; }
+  .logo{ position:absolute; top:10mm; height:62mm; }
+  .logo.l{ left:30mm; } .logo.r{ right:30mm; }
+  .inst{ font-family:"Liberation Serif", "Times New Roman", serif; text-align:center; font-size:25pt; line-height:1.3; color:#1d2c3f; }
+  .inst .u{ font-weight:bold; font-size:29pt; }
+  .banner{ background:#2a5d9f; color:#fff; border-radius:5mm; text-align:center; padding:4mm 10mm 5mm; margin-top:6mm; }
+  .banner .t{ font-weight:bold; font-size:112pt; line-height:1.02; }
+  .banner .s{ font-size:31pt; margin-top:1mm; color:#e8eef6; }
+  .who{ text-align:center; margin-top:5mm; font-size:46pt; line-height:1.2; color:#1d2c3f; }
+  .who .k{ font-style:italic; color:#4a5560; }
+  .who .sep{ display:inline-block; width:40mm; }
+
+  /* ----- corps : deux moitiés, la jonction tombe dans l'espace entre elles ----- */
+  .halves{ flex:1; display:flex; gap:47mm; padding:15mm 26mm 16mm; min-height:0; }
+  .body{ width:784mm; flex:none; display:flex; flex-direction:column; gap:9mm; min-height:0; }
+  .row{ display:flex; gap:12mm; min-height:0; }
+  .col{ display:flex; flex-direction:column; gap:9mm; min-width:0; }
+  .sec{ display:flex; flex-direction:column; min-width:0; }
+  .sec > h2{ background:#2a5d9f; color:#fff; text-align:center; font-size:31pt; font-weight:bold;
+             padding:2.6mm 6mm; border-radius:3mm; }
+  .sec > .c{ border:0.5mm solid #c3cad2; border-top:none; border-radius:0 0 3mm 3mm; padding:6mm 8mm 7mm; flex:1; margin:0 3mm; }
+  p + p{ margin-top:3mm; }
+  ul{ margin-left:9mm; } li{ margin:1.4mm 0; }
+  ol{ margin-left:11mm; } ol li{ margin:2mm 0; padding-left:1mm; }
+  .cap{ font-size:19pt; color:#5a636c; text-align:center; margin-top:2.5mm; font-style:italic; }
+  img{ display:block; }
+  table{ border-collapse:collapse; width:100%; font-size:21.5pt; line-height:1.25; }
+  th{ background:#e3e7eb; text-align:left; padding:2mm 3mm; border:0.35mm solid #b9c1c9; }
+  td{ padding:1.8mm 3mm; border:0.35mm solid #b9c1c9; vertical-align:top; }
+  .board{ display:flex; gap:6mm; align-items:center; margin-top:4mm; }
+  .board img{ width:165mm; flex:none; }
+  .board div{ font-size:22pt; }
+  .photo{ position:relative; height:128mm; border:0.6mm dashed #8f9aa5; background:#f3f5f7; display:flex;
+          align-items:center; justify-content:center; text-align:center; color:#6b747d; font-size:20pt; padding:4mm; }
+  .photo img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .blank{ width:30%; }
+  table.big td, table.big th{ padding:3.2mm 3.5mm; }
+</style>
+</head>
+<body>
+<div class="poster" id="poster">
+  <div class="top">
+    <img class="logo l" src="img/logo_usthb.png" alt="USTHB">
+    <img class="logo r" src="img/logo_usthb.png" alt="USTHB">
+    <div class="inst">
+      République Algérienne Démocratique et Populaire<br>
+      Ministère de l'Enseignement Supérieur et de la Recherche Scientifique<br>
+      <span class="u">Université des Sciences et de la Technologie Houari Boumediene</span><br>
+      Faculté d'Électronique et d'Informatique · Mini-projet de Licence 3 Électronique · 2026/2027
+    </div>
+    <div class="banner">
+      <div class="t">Smart Attendance System</div>
+      <div class="s">Étude et réalisation d'un système de gestion des présences par carte étudiant RFID</div>
+    </div>
+    <div class="who">
+      <span class="k">Réalisé par :</span> <b>TSONGODZA Evidence</b> &amp; <b>MANDEBVU Langelihle Sasha</b><span class="sep"></span><span class="k">Encadré par :</span> <b>Mr BOUCHEFRA</b>
+    </div>
+  </div>
+
+  <div class="halves">
+<!-- ======================= MOITIÉ GAUCHE (feuille 1) ======================= -->
+  <div class="body half">
+    <div class="row">
+      <div class="sec" style="flex:1.12">
+        <h2>Introduction</h2>
+        <div class="c">
+          <p>Dans nos amphithéâtres, la présence est encore prise sur une feuille qui passe de main en main. Cela fait perdre du temps à chaque séance, il y a des erreurs de lecture et certains signent à la place d'un camarade absent. Ensuite, il faut tout ressaisir à la main.</p>
+          <p>Pourtant chaque étudiant a déjà une carte avec une puce RFID, celle qu'on pose sur le lecteur du restaurant universitaire. Nous avons voulu reprendre ce même geste pour les cours : à la fin de la séance, l'enseignant se met à la porte avec le boîtier et chaque étudiant pose sa carte en sortant.</p>
+          <p>Le boîtier fonctionne sur batterie, sans aucun câble pendant le cours. Après le cours, il suffit de le brancher sur un PC : la carte microSD apparaît comme une clé USB avec les listes de présence en CSV.</p>
+        </div>
+      </div>
+      <div class="sec" style="flex:1">
+        <h2>Objectifs</h2>
+        <div class="c">
+          <ul>
+            <li>Lire la carte étudiant existante, posée à plat, sans contact.</li>
+            <li>Enregistrer chaque passage avec la date et l'heure, même après une coupure (horloge DS3231 avec pile).</li>
+            <li>Ne compter une carte qu'une seule fois par séance.</li>
+            <li>Garder les données sur carte microSD (fichiers CSV).</li>
+            <li>Récupérer les fichiers sur PC sans installer de logiciel.</li>
+            <li>Fonctionner sur batterie 18650 rechargeable en USB-C.</li>
+            <li>Indiquer le résultat à l'étudiant : LED, buzzer et écran OLED.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>Schéma synoptique</h2>
+      <div class="c">
+        <img src="img/schema_synoptique.png" style="width:100%">
+        <p style="margin-top:4mm; font-size:22pt">La bobine crée un champ à 125 kHz qui alimente la puce de la carte ; le lecteur RDM6300 envoie l'identifiant à l'ESP32-S3 par liaison série (9600 bauds). L'ESP32-S3 cherche l'étudiant dans la liste, lit l'heure sur le DS3231 (I2C) et écrit une ligne sur la microSD (SPI). L'énergie vient d'une batterie 18650 : chargeur TP4056, interrupteur, élévateur MT3608 réglé à 5 V puis diode Schottky.</p>
+      </div>
+    </div>
+
+    <div class="row" style="flex:1">
+      <div class="col" style="flex:1">
+        <div class="sec">
+          <h2>Fonctionnement</h2>
+          <div class="c">
+            <ol>
+              <li>L'enseignant allume le boîtier et appuie sur le bouton 1 pour démarrer la séance.</li>
+              <li>Chaque étudiant pose sa carte à plat sur la zone « TAP CARD ».</li>
+              <li>L'ESP32-S3 vérifie la trame reçue (somme de contrôle XOR), cherche l'UID dans <i>students.csv</i> et lit l'heure.</li>
+              <li>Une ligne est ajoutée au fichier de la séance sur la microSD.</li>
+              <li>Un appui long sur le bouton 1 termine la séance et crée la liste finale triée par nom.</li>
+              <li>Branché sur le PC, le boîtier apparaît comme une clé USB.</li>
+            </ol>
+            <table style="margin-top:4mm; font-size:22pt">
+              <tr><th>Cas</th><th>LED</th><th>Buzzer</th></tr>
+              <tr><td>Étudiant présent</td><td>verte</td><td>1 bip court</td></tr>
+              <tr><td>Carte inconnue</td><td>rouge</td><td>1 bip long</td></tr>
+              <tr><td>Carte déjà lue</td><td>rouge × 2</td><td>2 bips</td></tr>
+              <tr><td>Début / fin de séance</td><td>verte × 3 / rouge × 2</td><td>3 bips / 2 bips longs</td></tr>
+              <tr><td>Erreur (SD, horloge)</td><td>rouge × 3</td><td>3 bips</td></tr>
+              <tr><td>Système en marche</td><td>bleue, 2 éclats / 3 s</td><td>—</td></tr>
+            </table>
+          </div>
+        </div>
+        <div class="sec" style="flex:1">
+          <h2>Matériel utilisé</h2>
+          <div class="c">
+            <table style="font-size:23.5pt" class="big">
+              <tr><th style="width:38%">Composant</th><th>Rôle</th></tr>
+              <tr><td>ESP32-S3 N16R8</td><td>Microcontrôleur (240 MHz, USB natif)</td></tr>
+              <tr><td>RDM6300 + bobine</td><td>Lecture des cartes 125 kHz (EM4100)</td></tr>
+              <tr><td>DS3231 + pile CR2032</td><td>Horloge temps réel</td></tr>
+              <tr><td>Module microSD</td><td>Stockage des fichiers CSV</td></tr>
+              <tr><td>Écran OLED 0,96"</td><td>Affichage du nom et de l'état</td></tr>
+              <tr><td>18650, TP4056, MT3608</td><td>Batterie, charge USB-C, élévation à 5 V</td></tr>
+              <tr><td>3 LED, buzzer, 2 boutons</td><td>Signalisation et commandes</td></tr>
+              <tr><td>Diode Schottky 1N5819</td><td>Partage du 5 V entre USB et batterie</td></tr>
+              <tr><td>Nappes 16 fils (IDC)</td><td>Liaison entre les trois cartes</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="col" style="flex:1">
+        <div class="sec" style="flex:1">
+          <h2>Organigrammes</h2>
+          <div class="c" style="display:flex; gap:8mm; align-items:flex-start; justify-content:center">
+            <div style="width:146mm">
+              <img src="img/organigramme_principal.png" style="width:146mm">
+              <div class="cap">Programme principal</div>
+            </div>
+            <div style="width:186mm">
+              <img src="img/organigramme_carte.png" style="width:186mm">
+              <div class="cap">Lecture d'une carte</div>
+              <img src="img/organigramme_session.png" style="width:186mm; margin-top:5mm">
+              <div class="cap">Début et fin de séance</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<!-- ======================= MOITIÉ DROITE (feuille 2) ======================= -->
+  <div class="body half">
+    <div class="sec">
+      <h2>Schéma électrique</h2>
+      <div class="c">
+        <img src="img/schema_electrique.png" style="height:452mm; width:auto; margin:0 auto">
+        <p class="cap">Schéma complet dessiné sous KiCad comme un seul circuit. Liaisons ESP32-S3 : LED sur GPIO 1, 2 et 5 ; buzzer sur GPIO 42 ; boutons sur GPIO 40 et 41 ; I2C (OLED, DS3231) sur GPIO 8 et 9 ; microSD sur GPIO 10 à 13 ; RDM6300 sur GPIO 18.</p>
+      </div>
+    </div>
+
+    <div class="row" style="flex:1">
+      <div class="sec" style="flex:none; width:350mm">
+        <h2>Les trois cartes électroniques</h2>
+        <div class="c">
+          <p>Pour que le boîtier tienne dans une main, le circuit est réparti sur trois cartes de 95 × 60 mm empilées, reliées par deux nappes de 16 fils. Les cartes sont dessinées sous KiCad, en double face.</p>
+          <div class="board"><img src="img/pcb_top.png"><div><b>Carte TOP</b><br>Écran OLED, LED, boutons, buzzer et bobine RFID (pas de cuivre sous la bobine).</div></div>
+          <div class="board"><img src="img/pcb_middle.png"><div><b>Carte MIDDLE</b><br>ESP32-S3 sur supports (amovible), lecteur RDM6300, diode Schottky.</div></div>
+          <div class="board"><img src="img/pcb_bottom.png"><div><b>Carte BOTTOM</b><br>Batterie (dessous), TP4056, interrupteur, MT3608, microSD, DS3231.</div></div>
+          <p style="margin-top:4mm; font-size:22pt">Alimentation : 18650 → TP4056 → interrupteur → MT3608 (5,0 V) → 1N5819 → 5V_SYS. Le 3,3 V vient du régulateur de la carte ESP32-S3. Attention, sur le TP4056 protégé la masse est OUT− et non B−.</p>
+        </div>
+      </div>
+      <div class="col" style="flex:1">
+        <div class="sec">
+          <h2>Réalisation et tests</h2>
+          <div class="c">
+            <p style="font-size:22pt">Le montage a d'abord été câblé sur plaque d'essai et testé module par module avec de petits programmes (D1 à D8). La partie logique du programme a été vérifiée sur PC (26 tests unitaires). Les trois circuits imprimés sont ensuite réalisés à partir des fichiers Gerber.</p>
+            <div style="display:flex; gap:6mm; margin-top:4mm">
+              <div class="photo" style="flex:1"><img src="photos/prototype.jpg" onerror="this.remove()">Photo : prototype sur plaque d'essai</div>
+              <div class="photo" style="flex:1"><img src="photos/cartes.jpg" onerror="this.remove()">Photo : cartes assemblées</div>
+            </div>
+            <table style="margin-top:5mm; font-size:20pt">
+              <tr><th>Test</th><th>Résultat attendu</th><th class="blank">Résultat obtenu</th></tr>
+              <tr><td>Tensions à vide</td><td>5,0 V / 4,7 V / 3,3 V</td><td></td></tr>
+              <tr><td>Lecture d'une carte</td><td>UID lu, LED verte, bip</td><td></td></tr>
+              <tr><td>Même carte deux fois</td><td>Comptée une seule fois</td><td></td></tr>
+              <tr><td>Carte inconnue</td><td>« UNKNOWN », LED rouge</td><td></td></tr>
+              <tr><td>Coupure pendant la séance</td><td>Fichier intact, heure gardée</td><td></td></tr>
+              <tr><td>Branchement au PC</td><td>microSD vue comme clé USB</td><td></td></tr>
+              <tr><td>Séance complète</td><td>Aucun passage manqué</td><td></td></tr>
+              <tr><td>Autonomie</td><td>Au moins une journée de cours</td><td></td></tr>
+            </table>
+          </div>
+        </div>
+        <div class="sec" style="flex:1">
+          <h2>Conclusion</h2>
+          <div class="c" style="font-size:25pt">
+            <p>La première difficulté a été de connaître la fréquence de la carte étudiant : deux téléphones NFC ne la détectaient pas alors qu'ils lisaient un passeport à 13,56 MHz. Nous en avons déduit qu'elle fonctionne à 125 kHz, ce que le lecteur RDM6300 a confirmé.</p>
+            <p>Ce projet nous a permis de passer par toutes les étapes d'un produit embarqué : cahier des charges, prototype, programme, schémas puis circuits imprimés. Nous avons utilisé les bus UART, I2C, SPI et USB et appris à gérer une batterie Li-ion.</p>
+            <p>Améliorations possibles : envoi des présences par Wi-Fi, boîtier imprimé en 3D avec niveau de batterie, lecteur 125 kHz et 13,56 MHz.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+</div>
+<!-- La page fait 1667 x 1189 mm : le poster entier. Les deux feuilles A0 (avec 15 mm de recouvrement)
+     sont découpées ensuite dans le PDF (voir README.md). -->
+</body>
+</html>

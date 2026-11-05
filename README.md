@@ -224,6 +224,7 @@ g++ -std=c++17 -Iinclude test/host/test_parsers.cpp -o t && ./t    # unit tests 
 | Document | Content |
 |---|---|
 | [`documentation/rapport_final/`](documentation/rapport_final/) | **Project report** in French and English (Word + PDF) |
+| [`documentation/poster/`](documentation/poster/) | **Exhibition poster**, two A0 sheets side by side (French) |
 | `documentation/Smart_Attendance_Code_Flowcharts.pdf` | Flowcharts of the firmware |
 | `documentation/Breadboard_Assembly_Guide_No_Soldering.pdf` | Breadboard prototype guide |
 | `documentation/Resume_mini_projet_smart_attendance_system.pdf` | Short project summary (French) |

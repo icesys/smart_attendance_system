@@ -47,7 +47,19 @@ Parts: [`bill_of_materials.md`](bill_of_materials.md). Cable pinouts and power n
 8. Lay the 35 × 46 mm coil flat in the copper-free area (x 8–54, y 22–57 mm) and connect it to J3.
 
 ## Stacking
-1. Fit 4 M3 standoffs on BOTTOM, mount MIDDLE, 4 more standoffs, mount TOP.
+
+**Gap between MIDDLE and TOP: 18 mm minimum, 20 mm recommended** (M3 standoff length). Every part is on the top face of each board, so this gap must clear the tallest parts of MIDDLE plus the solder joints under TOP. Typical heights (check yours with the caliper once the parts are in place):
+
+| On MIDDLE | Height above the board |
+|---|---|
+| ESP32-S3 dev board in its sockets: socket 8.5 + header spacer 2.5 + PCB 1.6 + USB-C / buttons ≈ 3.5 | ≈ 16 mm |
+| RDM6300 in its sockets: 8.5 + 2.5 + 1.6 + parts | ≈ 14–15 mm |
+| J105 box header (≈ 9 mm) with the ribbon plug fitted and the cable bending towards the edge | ≈ 15–16 mm |
+| **Under TOP**: solder joints / cut leads, including J1 directly above J105 | + 1.5–2 mm |
+
+16 mm + 2 mm = 18 mm is the tightest stack; 20 mm leaves room for the ribbon bend and keeps the RFID coil further from the ESP32 board and the MIDDLE ground plane (better read distance). Cable 1 leaves J105, goes around the right edge of TOP and plugs into J1 from above.
+
+1. Fit 4 M3 standoffs on BOTTOM, mount MIDDLE, 4 more standoffs (20 mm), mount TOP.
 2. Cable 2: MIDDLE J106 ↔ BOTTOM J201. Cable 1: TOP J1 ↔ MIDDLE J105. Pin 1 to pin 1.
 
 ## First power-on
