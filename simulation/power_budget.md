@@ -4,16 +4,16 @@ Paper calculation from the datasheets in `hardware/datasheets/`. These values ar
 
 ## 1. Current per part
 
-| Part | Rail | Typical current | Source |
-|---|---|---|---|
-| ESP32-S3 (Wi-Fi and Bluetooth off, CPU running) | 3V3 | 40–60 mA, use **50 mA** | ESP32-S3 datasheet, active mode without RF |
-| OLED 0.96" (text, partly lit) | 3V3 | 10–20 mA, use **15 mA** | SSD1306 datasheet + typical module |
-| DS3231 | 3V3 | 0.2 mA | DS3231 datasheet |
-| LEDs (blue heartbeat, short green/red flashes) | 3V3 | average **2 mA** | 220 Ω → about 5–6 mA while on |
-| Dev board power LED | 3V3 | **3 mA** | typical |
-| RDM6300 (field always on) | 5V_SYS | < 50 mA, use **40 mA** | Module specification |
-| microSD module (idle, short writes) | 5V_SYS | average **5 mA** (writes 30–100 mA for a few ms) | typical |
-| Buzzer (short beeps only) | 3V3 | negligible on average | — |
+| Part                                            | Rail   | Typical current                                  | Source                                     |
+| ----------------------------------------------- | ------ | ------------------------------------------------ | ------------------------------------------ |
+| ESP32-S3 (Wi-Fi and Bluetooth off, CPU running) | 3V3    | 40–60 mA, use **50 mA**                          | ESP32-S3 datasheet, active mode without RF |
+| OLED 0.96" (text, partly lit)                   | 3V3    | 10–20 mA, use **15 mA**                          | SSD1306 datasheet + typical module         |
+| DS3231                                          | 3V3    | 0.2 mA                                           | DS3231 datasheet                           |
+| LEDs (blue heartbeat, short green/red flashes)  | 3V3    | average **2 mA**                                 | 220 Ω → about 5–6 mA while on              |
+| Dev board power LED                             | 3V3    | **3 mA**                                         | typical                                    |
+| RDM6300 (field always on)                       | 5V_SYS | < 50 mA, use **40 mA**                           | Module specification                       |
+| microSD module (idle, short writes)             | 5V_SYS | average **5 mA** (writes 30–100 mA for a few ms) | typical                                    |
+| Buzzer (short beeps only)                       | 3V3    | negligible on average                            | —                                          |
 
 The 3V3 loads come through the linear regulator of the ESP32 board, so they draw the same current from 5V_SYS.
 
