@@ -1,4 +1,4 @@
-<h1 align="center">Smart Attendance System - by Ice</h1>
+<h1 align="center">Smart Attendance System</h1>
 
 <p align="center">
   <img src="./media/photos/IMG_8066.jpg" alt="The finished Smart Attendance System: three stacked PCBs joined by ribbon cables" width="520">
