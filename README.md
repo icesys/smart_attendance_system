@@ -289,7 +289,8 @@ g++ -std=c++17 -Iinclude test/host/test_parsers.cpp -o t && ./t    # unit tests 
 <h2>⚠️ Limitations</h2>
 
 - A 125 kHz card UID is a plain number that can be copied, and a student could tap a friend's card. The system proves that a **card** was tapped, not that its owner was present.
-- Only 125 kHz (EM4100) cards are read.
+- Only 125 kHz (EM4100) cards are read, at about 3 cm.
+- The time from tap to beep is about 1–2 s, slower than the 1 s target.
 - The student list must be prepared and copied to the microSD card by the lecturer.
 
 ---

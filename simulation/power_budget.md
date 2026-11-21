@@ -34,7 +34,7 @@ The 3V3 loads come through the linear regulator of the ESP32 board, so they draw
 | 2500 mAh | 2250 mAh | ≈ 12.5 h |
 | 3000 mAh | 2700 mAh | ≈ 15 h |
 
-The device only needs to be on while students tap their cards (about 10–15 minutes per lecture). Even left on all day (8 h), one charge of a 2500 mAh cell is enough: the target of test T8 ("at least one day of lectures") **should be met with margin**, to be confirmed by measurement.
+The device only needs to be on while students tap their cards (about 10–15 minutes per lecture). Even left on all day (8 h), one charge of a 2500 mAh cell is enough: the target of test T8 ("at least one day of lectures") **should be met with margin**.
 
 ## 4. Charging
 
@@ -42,4 +42,4 @@ The TP4056 module charges at 1 A (programming resistor 1.2 kΩ on the usual modu
 
 ## 5. Peaks
 
-At start-up and during microSD writes the current on 5V_SYS is higher for a few milliseconds (measure it in the test plan). The 470 µF + 100 nF at the MT3608 output and the 10 µF / 100 nF on each board cover these peaks.
+At start-up and during microSD writes the current on 5V_SYS is higher for a few milliseconds. The 470 µF + 100 nF at the MT3608 output and the 10 µF / 100 nF on each board cover these peaks.

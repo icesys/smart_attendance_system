@@ -17,7 +17,7 @@ Same list as section 2.2 of the final report. Each "Must" is checked by a test i
 | ID | Constraint |
 |---|---|
 | C1 | Battery operation on one 18650 Li-ion cell, charged over USB-C (no cable during the lecture) |
-| C2 | Card laid flat, no aiming; read in less than one second |
+| C2 | Card laid flat, no aiming; read in less than one second (**measured: about 1–2 s, target not fully met**) |
 | C3 | PCBs designed in KiCad; ESP32-S3 dev board mounted on sockets (removable) |
 | C4 | Complete project (hardware, software, documentation) finished by February 2027 |
 

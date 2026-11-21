@@ -199,13 +199,13 @@
           <div class="c">
             <p style="font-size:22pt">Le montage a d'abord été câblé sur plaque d'essai et testé module par module avec de petits programmes (D1 à D8). La partie logique du programme a été vérifiée sur PC (26 tests unitaires). Les trois circuits imprimés ont ensuite été réalisés à partir des fichiers Gerber, assemblés puis validés par les essais ci-dessous.</p>
             <div style="display:flex; gap:6mm; margin-top:4mm">
-              <div style="flex:1.333; min-width:0"><div class="photo" style="height:136mm; border:none; padding:0"><img src="photos/prototype.jpg" alt="Prototype sur plaque d'essai"></div><div class="cap">Prototype sur plaque d'essai</div></div>
-              <div style="flex:0.75; min-width:0"><div class="photo" style="height:136mm; border:none; padding:0"><img src="photos/cartes.jpg" alt="Les trois cartes assemblées"></div><div class="cap">Cartes assemblées</div></div>
-              <div style="flex:0.75; min-width:0"><div class="photo" style="height:136mm; border:none; padding:0"><img src="photos/lecture_carte.jpg" alt="Lecture d'une carte étudiant"></div><div class="cap">Lecture d'une carte</div></div>
+              <div style="flex:1.333; min-width:0"><div class="photo" style="height:104mm; border:none; padding:0"><img src="photos/prototype.jpg" alt="Prototype sur plaque d'essai"></div><div class="cap">Prototype sur plaque d'essai</div></div>
+              <div style="flex:0.75; min-width:0"><div class="photo" style="height:104mm; border:none; padding:0"><img style="object-position:50% 47%" src="photos/cartes.jpg" alt="Les trois cartes assemblées"></div><div class="cap">Cartes assemblées</div></div>
+              <div style="flex:0.75; min-width:0"><div class="photo" style="height:104mm; border:none; padding:0"><img style="object-position:50% 62%" src="photos/lecture_carte.jpg" alt="Lecture d'une carte étudiant"></div><div class="cap">Lecture d'une carte</div></div>
             </div>
             <table style="margin-top:5mm; font-size:20pt">
               <tr><th>Test</th><th>Résultat attendu</th><th class="blank">Résultat obtenu</th></tr>
-              <tr><td>Tensions à vide</td><td>5,0 V / 4,7 V / 3,3 V</td><td>Conforme</td></tr>
+              <tr><td>Tensions à vide</td><td>5,0 V / 4,7 V / 3,3 V</td><td>4,98 / 4,86 / 3,26 V</td></tr>
               <tr><td>Lecture d'une carte</td><td>UID lu, LED verte, bip</td><td>Conforme</td></tr>
               <tr><td>Même carte deux fois</td><td>Comptée une seule fois</td><td>Conforme</td></tr>
               <tr><td>Carte inconnue</td><td>« UNKNOWN », LED rouge</td><td>Conforme</td></tr>
@@ -213,6 +213,9 @@
               <tr><td>Branchement au PC</td><td>microSD vue comme clé USB</td><td>Conforme</td></tr>
               <tr><td>Séance complète</td><td>Aucun passage manqué</td><td>Conforme</td></tr>
               <tr><td>Autonomie</td><td>Au moins une journée de cours</td><td>Conforme</td></tr>
+              <tr><td>Distance de lecture</td><td>Carte posée à plat</td><td>≈ 3 cm (mesuré)</td></tr>
+              <tr><td>Temps carte → bip</td><td>Moins de 1 s</td><td>1 à 2 s (mesuré)</td></tr>
+              <tr><td>Courant batterie</td><td>—</td><td>≈ 180 mA (estimé)</td></tr>
             </table>
           </div>
         </div>
