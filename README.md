@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <b>Personal embedded-systems project</b><br>
+  <b>Embedded systems project</b><br>
   A battery-powered, cable-free device that records lecture attendance when students tap their existing RFID student card.
 </p>
 
@@ -30,7 +30,7 @@
 
 Attendance in lecture halls is still often taken on a sheet of paper. That wastes time, invites mistakes and fraud (signing for an absent friend), and the data has to be typed in again afterwards.
 
-Every student already carries a **student card with an RFID chip**, used daily at the student restaurant: you lay it flat on a small reader and the visit is recorded. I built **Smart Attendance System** to bring the same gesture to lectures. At the end of the session the lecturer stands at the door with the device, and each student taps their card on the way out. The device identifies the student, time-stamps the tap, ignores repeated taps and saves everything to a microSD card. Afterwards the lecturer plugs it into a PC, where the card appears as a **USB drive** holding ready-to-use CSV files.
+Every student already carries a **student card with an RFID chip**, used daily at the student restaurant: you lay it flat on a small reader and the visit is recorded. Together with my teammate **Langelihle Sasha Mandebvu**, I built **Smart Attendance System** to bring the same gesture to lectures. At the end of the session the lecturer stands at the door with the device, and each student taps their card on the way out. The device identifies the student, time-stamps the tap, ignores repeated taps and saves everything to a microSD card. Afterwards the lecturer plugs it into a PC, where the card appears as a **USB drive** holding ready-to-use CSV files.
 
 > [!NOTE]
 > Status: **complete.** The three PCBs are built and assembled, and the device passed all eight system tests (T1 to T8).
@@ -313,4 +313,4 @@ g++ -std=c++17 -Iinclude test/host/test_parsers.cpp -o t && ./t    # unit tests 
 ---
 
 <h1 align="center">DISCLAIMER</h1>
-<h4 align="center">Personal embedded-systems project. It records card taps only and is not a secure identity verification system.</h4>
+<h4 align="center">Embedded systems project. It records card taps only and is not a secure identity verification system.</h4>
