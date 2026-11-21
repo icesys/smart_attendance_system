@@ -30,7 +30,7 @@
 
 Attendance in lecture halls is still often taken on a sheet of paper. That wastes time, invites mistakes and fraud (signing for an absent friend), and the data has to be typed in again afterwards.
 
-Every student already carries a **student card with an RFID chip**, used daily at the student restaurant: you lay it flat on a small reader and the visit is recorded. Together with my teammate **Langelihle Sasha Mandebvu**, I built **Smart Attendance System** to bring the same gesture to lectures. At the end of the session the lecturer stands at the door with the device, and each student taps their card on the way out. The device identifies the student, time-stamps the tap, ignores repeated taps and saves everything to a microSD card. Afterwards the lecturer plugs it into a PC, where the card appears as a **USB drive** holding ready-to-use CSV files.
+Every student already carries a **student card with an RFID chip**, used daily at the student restaurant: you lay it flat on a small reader and the visit is recorded. We (**Evidence Tsongodza** and **Langelihle Sasha Mandebvu**) built **Smart Attendance System** to bring the same gesture to lectures. At the end of the session the lecturer stands at the door with the device, and each student taps their card on the way out. The device identifies the student, time-stamps the tap, ignores repeated taps and saves everything to a microSD card. Afterwards the lecturer plugs it into a PC, where the card appears as a **USB drive** holding ready-to-use CSV files.
 
 > [!NOTE]
 > Status: **complete.** The three PCBs are built and assembled, and the device passed all eight system tests (T1 to T8).
