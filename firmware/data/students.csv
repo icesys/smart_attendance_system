@@ -8,11 +8,12 @@
 # A card that is not in the list is added by itself as UID,UNKNOWN,UNKNOWN,UNKNOWN: replace the three UNKNOWN
 # with the student's details (it counts as an unknown card until then), then eject the drive or type RELOAD.
 uid,surname,names,matricule
-02005B4156,Tsongodza,Evidence,23238ZWE13623
-02005B1F7F,Kavenda,Percyslage Tanaka,23238ZWE13645
-0B000282D3,Nzombe,Ebenezer,23238ZWE13651
-350009B10C,Rupiya,Christed,23238ZWE13660
-35000996C6,Runhare,Malvin,23238ZWE13689
-0200558ABE,Matikiti,Brighton,23238ZWE13691
-430087BBBB,Muromba,Takudzwa Givemore,23238ZWE19477
-3C005C3B6A,Mutamiri, Isheanopa Cuthbert, 23238ZWE19481
+# EXAMPLE DATA ONLY: these students and card numbers are fictional. Replace them with your own list.
+AA00000001,Exemple,Alice,DEMO0001
+AA00000002,Exemple,Bilal,DEMO0002
+AA00000003,Exemple,Chloe,DEMO0003
+AA00000004,Exemple,David,DEMO0004
+AA00000005,Exemple,Emma,DEMO0005
+AA00000006,Exemple,Farid,DEMO0006
+AA00000007,Exemple,Grace,DEMO0007
+AA00000008,Exemple,Hugo,DEMO0008
