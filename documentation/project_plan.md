@@ -1,6 +1,6 @@
 # Project Plan
 
-Target: complete project by **February 2027**. Status updated 2026-11-04.
+**Project complete.** Status updated 2026-11-21.
 
 | Phase | Period | Deliverable | Status |
 |---|---|---|---|
@@ -8,19 +8,19 @@ Target: complete project by **February 2027**. Status updated 2026-11-04.
 | 2. Firmware | Oct–Nov 2026 | Read, time-stamp, store, no duplicates, student list, final list, USB drive mode, OLED | Done (26 unit tests pass) |
 | 3. Schematics | Nov 2026 | KiCad schematics: per board, three boards with cables, whole system as one circuit | Done |
 | 4. PCB layout | Nov 2026 | Three boards placed, routed, checked; Gerber and drill files | Done |
-| 5. Report | Nov 2026 | Final report in French and English (Word + PDF) | Done, test results to add |
-| 6. PCB order and assembly | Nov–Dec 2026 | Boards manufactured, soldered, stacked | Next |
-| 7. Testing | Dec 2026 – Jan 2027 | Test plan T1–T8 run on the real boards | To do |
-| 8. Enclosure | Dec 2026 – Jan 2027 | FreeCAD design, 3D printed | To do |
-| 9. Documentation and demo | Feb 2027 | Real photos, demo video, report completed | To do |
+| 5. Report | Nov 2026 | Final report in French and English (Word + PDF) | Done, with test results |
+| 6. PCB manufacturing and assembly | Nov 2026 | Boards manufactured, soldered, stacked | Done |
+| 7. Testing | Nov 2026 | Test plan T1–T8 run on the real boards | Done (all passed) |
+| 8. Documentation | Nov 2026 | Real photos, poster, report completed | Done |
 
 ## Milestones
 - [x] Card read confirmed (125 kHz reader works with the student card)
 - [x] Firmware v1 (all "Must" requirements)
 - [x] Schematics done
 - [x] PCBs routed, Gerbers generated
-- [ ] PCBs ordered
-- [ ] Boards assembled
-- [ ] Final test passed
-- [ ] Enclosure done
-- [ ] Report completed with test results and photos
+- [x] PCBs manufactured
+- [x] Boards assembled
+- [x] Final test passed
+- [x] Report completed with test results and photos
+
+A 3D-printed enclosure remains a possible future improvement.

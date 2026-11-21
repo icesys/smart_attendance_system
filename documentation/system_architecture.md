@@ -48,4 +48,4 @@ flowchart LR
 ## Physical layout
 Three stacked 95 × 60 mm boards (TOP: interface and coil, MIDDLE: ESP32-S3 and RDM6300, BOTTOM: power, microSD, clock), joined by two 16-wire ribbon cables. Pinouts: [`hardware/schematics/kicad/sas_pcb/documentation/Connector_Table.md`](../hardware/schematics/kicad/sas_pcb/documentation/Connector_Table.md).
 
-Firmware flowcharts: [`Smart_Attendance_Code_Flowcharts.pdf`](Smart_Attendance_Code_Flowcharts.pdf) and `media/diagrams/flowchart_*.png`.
+Firmware flowcharts: `media/diagrams/flowchart_*.png`.

@@ -52,19 +52,7 @@ The per-reference list used for the PCBs is [`hardware/schematics/kicad/sas_pcb/
 
 | Item | Qty | Notes |
 |---|---|---|
-| Breadboards | 2 | See `Breadboard_Assembly_Guide_No_Soldering.pdf` |
+| Breadboards | 2 | Prototype only |
 | Solid-core wire 22 AWG | 7 m | 2 m black, 2 m red, 3 m green |
 | Dupont jumper wires | 40 | 600 DA; too flexible, used only for short links |
 | EM4100 test cards / tags | a few | To test without a real student card |
-
-## 5. Costs
-
-Fill in the price paid for each line above, then total it here.
-
-| Group | Cost (DA) |
-|---|---|
-| Modules | |
-| Discrete components | |
-| Connectors and mechanics | |
-| PCB manufacturing + shipping | |
-| **Total** | |

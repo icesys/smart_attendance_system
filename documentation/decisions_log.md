@@ -25,3 +25,4 @@
 | 2026-11 | No copper in the RFID coil area of the TOP board (x 8–54, y 22–57 mm) | Copper would weaken the 125 kHz field |
 | 2026-11 | Module footprints drawn from caliper measurements and checked on a 1:1 printout | No library footprints exist for these modules |
 | 2026-11 | Buzzer supply selectable with solder jumper JP1 (default 3V3) | 5 V option if the buzzer is too quiet |
+| 2026-11 | Deliver the device as an open three-board stack, without an enclosure | The stack is complete and working; a 3D-printed case stays a future improvement |

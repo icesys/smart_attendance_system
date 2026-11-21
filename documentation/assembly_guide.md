@@ -1,14 +1,13 @@
 # Assembly Guide (PCBs)
 
-For the breadboard prototype, see [`Breadboard_Assembly_Guide_No_Soldering.pdf`](Breadboard_Assembly_Guide_No_Soldering.pdf).
 Parts: [`bill_of_materials.md`](bill_of_materials.md). Cable pinouts and power notes: [`hardware/schematics/kicad/sas_pcb/documentation/`](../hardware/schematics/kicad/sas_pcb/documentation/). 1:1 board printouts: [`hardware/schematics/kicad/sas_pcb/printouts_1to1/`](../hardware/schematics/kicad/sas_pcb/printouts_1to1/).
 
 ## Before you start
-- [ ] All parts from the BOM present; resistor values checked with the multimeter (220 Ω, 1 kΩ, 100 kΩ)
-- [ ] Bare boards inspected: no shorts or broken tracks, holes drilled, M3 holes at (4,4), (91,4), (4,56), (91,56) mm
-- [ ] **MT3608 set to 5.0 V** on the bench (powered from a 3.7 V source, multimeter on VOUT+ / VOUT−) **before** it goes on the board
-- [ ] **DS3231 module: charge resistor removed** (the CR2032 is not rechargeable)
-- [ ] ESP32-S3 dev board: IN-OUT pads soldered so the 5V pin is fed from 5V_SYS
+- All parts from the BOM present; resistor values checked with the multimeter (220 Ω, 1 kΩ, 100 kΩ)
+- Bare boards inspected: no shorts or broken tracks, holes drilled, M3 holes at (4,4), (91,4), (4,56), (91,56) mm
+- **MT3608 set to 5.0 V** on the bench (powered from a 3.7 V source, multimeter on VOUT+ / VOUT−) **before** it goes on the board
+- **DS3231 module: charge resistor removed** (the CR2032 is not rechargeable)
+- ESP32-S3 dev board: IN-OUT pads soldered so the 5V pin is fed from 5V_SYS
 
 ## Rules
 - Solder the lowest parts first (resistors, diodes), then capacitors, sockets and headers, then the tallest parts.
@@ -63,10 +62,10 @@ Parts: [`bill_of_materials.md`](bill_of_materials.md). Cable pinouts and power n
 2. Cable 2: MIDDLE J106 ↔ BOTTOM J201. Cable 1: TOP J1 ↔ MIDDLE J105. Pin 1 to pin 1.
 
 ## First power-on
-- [ ] Switch on and measure: 5V_BOOST 5.0 V, 5V_SYS ≈ 4.7 V, 3V3 3.3 V (test T1)
-- [ ] Upload sketch D1 over the UART USB-C port: the serial monitor prints its message
-- [ ] Upload sketch D2 (I2C scanner): finds 0x68 (DS3231) and 0x3C (OLED)
-- [ ] Sketches D4 (microSD), D5 (reader), D6 (LEDs, buzzer, buttons), D8 (OLED)
-- [ ] Sketch D9: EOSC cleared (the clock keeps running on the coin cell)
-- [ ] Main firmware + `firmware/tools/set_clock.py`: clock set to the PC time
-- [ ] Copy `students.csv` to the microSD, run the test plan (`test_plan.md`)
+- Switch on and measure: 5V_BOOST 5.0 V, 5V_SYS ≈ 4.7 V, 3V3 3.3 V (test T1)
+- Upload sketch D1 over the UART USB-C port: the serial monitor prints its message
+- Upload sketch D2 (I2C scanner): finds 0x68 (DS3231) and 0x3C (OLED)
+- Sketches D4 (microSD), D5 (reader), D6 (LEDs, buzzer, buttons), D8 (OLED)
+- Sketch D9: EOSC cleared (the clock keeps running on the coin cell)
+- Main firmware + `firmware/tools/set_clock.py`: clock set to the PC time
+- Copy `students.csv` to the microSD, run the test plan (`test_plan.md`)

@@ -13,5 +13,3 @@ KiCad 10 (the PCB files are saved in KiCad 10 format). All projects use relative
 
 ## Ordering the PCBs
 Zip each folder in `gerbers/` (for example `pcb_top_gerbers_&_drills.zip`) and upload one zip per board. All three boards: 95 × 60 mm, 2 layers, 1.6 mm, HASL, any colour.
-
-Enclosure (FreeCAD): planned, will go in `enclosure/`.

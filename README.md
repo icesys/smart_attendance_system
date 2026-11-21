@@ -1,9 +1,9 @@
 <h1 align="center">Smart Attendance System - by Ice</h1>
 
 <p align="center">
-  <img src="./media/photos/concept_device_in_hand.jpg" alt="Concept image of the Smart Attendance System held at a lecture-hall door" width="650">
+  <img src="./media/photos/IMG_8066.jpg" alt="The finished Smart Attendance System: three stacked PCBs joined by ribbon cables" width="520">
   <br>
-  <sub><i>Concept image of the finished device (AI-generated illustration). Real photos will replace it after PCB assembly.</i></sub>
+  <sub><i>The finished device: three stacked PCBs.</i></sub>
 </p>
 
 <p align="center">
@@ -13,6 +13,7 @@
 
 <p align="center">
   <a href="#-about">About</a> &nbsp;·&nbsp;
+  <a href="#-from-prototype-to-final-device">Build</a> &nbsp;·&nbsp;
   <a href="#-how-it-works">How It Works</a> &nbsp;·&nbsp;
   <a href="#-key-features">Features</a> &nbsp;·&nbsp;
   <a href="#-hardware">Hardware</a> &nbsp;·&nbsp;
@@ -32,7 +33,18 @@ Attendance in lecture halls is still often taken on a sheet of paper. That waste
 Every student already carries a **student card with an RFID chip**, used daily at the student restaurant: you lay it flat on a small reader and the visit is recorded. I built **Smart Attendance System** to bring the same gesture to lectures. At the end of the session the lecturer stands at the door with the device, and each student taps their card on the way out. The device identifies the student, time-stamps the tap, ignores repeated taps and saves everything to a microSD card. Afterwards the lecturer plugs it into a PC, where the card appears as a **USB drive** holding ready-to-use CSV files.
 
 > [!NOTE]
-> Status: the prototype, the firmware, the schematics and the three PCBs (routed, Gerber files generated) are done. Manufacturing, assembly and final tests are the next steps.
+> Status: **complete.** The three PCBs are built and assembled, and the device passed all eight system tests (T1 to T8).
+
+---
+
+<h2>📸 From Prototype to Final Device</h2>
+
+<table>
+  <tr>
+    <td align="center" width="50%"><img src="./media/photos/IMG_6910.jpg" alt="Breadboard prototype with the ESP32-S3, RDM6300, clock, microSD, OLED, LEDs and buzzer"><br><b>Breadboard prototype</b></td>
+    <td align="center" width="50%"><img src="./media/photos/IMG_8092.jpg" alt="The finished device reading a card, with its green LED lit"><br><b>Final device reading a card</b></td>
+  </tr>
+</table>
 
 ---
 
@@ -224,15 +236,12 @@ g++ -std=c++17 -Iinclude test/host/test_parsers.cpp -o t && ./t    # unit tests 
 | Document | Content |
 |---|---|
 | [`documentation/rapport_final/`](documentation/rapport_final/) | **Project report** in French and English (Word + PDF) |
-| [`documentation/poster/`](documentation/poster/) | **Exhibition poster**, two A0 sheets side by side (French) |
-| `documentation/Smart_Attendance_Code_Flowcharts.pdf` | Flowcharts of the firmware |
-| `documentation/Breadboard_Assembly_Guide_No_Soldering.pdf` | Breadboard prototype guide |
+| [`documentation/poster/`](documentation/poster/) | **Exhibition poster**, two A0 sheets joined side by side (French) |
 | `documentation/Resume_mini_projet_smart_attendance_system.pdf` | Short project summary (French) |
 | `documentation/bill_of_materials.md` | All parts, grouped by function, with board references |
 | `documentation/assembly_guide.md` | PCB soldering order, stacking and first power-on |
 | `documentation/system_architecture.md` | Blocks, power rails, data flow |
 | `documentation/requirements.md`, `decisions_log.md`, `test_plan.md`, `project_plan.md` | Project management documents |
-| `documentation/smart_attendance_parts_and_pcb.pdf` | Early shopping list (October 2026, before the card type was known) |
 | `simulation/power_budget.md` | Current per part, battery life, charge time (estimates) |
 | `hardware/schematics/kicad/sas_pcb/documentation/` | BOM per reference, connector table, power distribution |
 | `hardware/datasheets/` | Datasheets of the chips and modules |
@@ -248,7 +257,6 @@ g++ -std=c++17 -Iinclude test/host/test_parsers.cpp -o t && ./t    # unit tests 
 | KiCad | Schematics and PCBs |
 | Python (pyserial) | `set_clock.py` (sets the clock from the PC) |
 | Word / LibreOffice | Project report |
-| FreeCAD | Enclosure (planned) |
 
 ---
 
@@ -256,13 +264,13 @@ g++ -std=c++17 -Iinclude test/host/test_parsers.cpp -o t && ./t    # unit tests 
 
 | Path | Content |
 |---|---|
-| `documentation/` | Final report (FR/EN), flowcharts, BOM, assembly guide, requirements, decisions log, test plan |
+| `documentation/` | Final report (FR/EN), poster, BOM, assembly guide, requirements, decisions log, test plan |
 | `firmware/` | PlatformIO project for the ESP32-S3 |
 | `hardware/schematics/kicad/` | KiCad projects: `sas_complete`, `sas_full_system`, `sas_schematics`, `sas_pcb` |
 | `hardware/gerbers/` | Gerber and drill files of the three boards |
 | `hardware/datasheets/` | Datasheets |
 | `simulation/` | Calculations (power budget, battery life) |
-| `media/` | Concept images, diagrams, (later) photos and demo video |
+| `media/` | Photos of the device and diagrams |
 
 ---
 
@@ -294,11 +302,12 @@ g++ -std=c++17 -Iinclude test/host/test_parsers.cpp -o t && ./t    # unit tests 
 - [x] Unit tests of the parsers (26 passing)
 - [x] KiCad schematics (per board, three boards with cables, whole system as one circuit)
 - [x] Three PCBs placed, routed and checked; Gerber files generated
-- [x] Project report (French and English), pending the test results
-- [ ] PCB manufacturing and assembly
-- [ ] Full test plan on the real boards
-- [ ] FreeCAD enclosure
-- [ ] Real photos and demo video (February 2027)
+- [x] Project report (French and English) with test results
+- [x] Exhibition poster
+- [x] PCB manufacturing and assembly
+- [x] Full test plan on the real boards (T1 to T8)
+
+**Possible future work:** 3D-printed enclosure, battery level display, Wi-Fi upload, dual-frequency reader.
 
 ---
 

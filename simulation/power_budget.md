@@ -1,6 +1,6 @@
 # Power budget and battery life (estimate)
 
-Paper calculation from the datasheets in `hardware/datasheets/`. Replace the estimates with the currents measured on the real boards (test plan, section 4).
+Paper calculation from the datasheets in `hardware/datasheets/`. These values are design estimates, not measurements.
 
 ## 1. Current per part
 

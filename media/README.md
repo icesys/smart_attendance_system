@@ -2,9 +2,8 @@
 
 | Folder | Content |
 |---|---|
-| `photos/` | Concept images of the device (AI-generated illustrations). Real photos of the boards and the device go here after assembly |
+| `photos/` | Real photos of the breadboard prototype and the finished device |
 | `diagrams/` | Block diagram, firmware flowcharts, complete schematic and PCB views (same figures as the final report) |
-| `videos/` | Demo video (planned, February 2027) |
 
 ## diagrams/
 | File | Content |
