@@ -573,6 +573,27 @@ bool i2cPresent(uint8_t addr) {
   return Wire.endTransmission() == 0;
 }
 
+// The DS3231 stops counting on its coin cell while bit 7 (EOSC) of its control register is 1,
+// and setting the time does not clear that bit, so it is checked at every start.
+void rtcKeepRunningOnBattery() {
+  constexpr uint8_t RTC_ADDR = 0x68;
+  constexpr uint8_t REG_CONTROL = 0x0E;
+  constexpr uint8_t EOSC = 0x80;
+  Wire.beginTransmission(RTC_ADDR);
+  Wire.write(REG_CONTROL);
+  if (Wire.endTransmission() != 0 || Wire.requestFrom(RTC_ADDR, (uint8_t)1) != 1) {
+    Serial.println("RTC control register could not be read.");
+    return;
+  }
+  uint8_t control = (uint8_t)Wire.read();
+  if (!(control & EOSC)) return;
+  Wire.beginTransmission(RTC_ADDR);
+  Wire.write(REG_CONTROL);
+  Wire.write((uint8_t)(control & ~EOSC));
+  Serial.println(Wire.endTransmission() == 0 ? "RTC was set to stop on its coin cell: fixed. Set the time once with SETTIME."
+                                             : "RTC is set to stop on its coin cell and could not be fixed.");
+}
+
 // ------------------------------ RESTART ------------------------------------
 void rebootNow() {
   Serial.println("Restarting...");
@@ -1080,6 +1101,7 @@ void setup() {
   Wire.begin(PIN_SDA, PIN_SCL);
   Wire.setClock(400000);   // DS3231 and SSD1306 both support 400 kHz: the screen updates 4x faster
   rtcOk = rtc.begin(&Wire);
+  if (rtcOk) rtcKeepRunningOnBattery();
   if (!rtcOk) {
     Serial.println("RTC not found: check SDA=GPIO9, SCL=GPIO8 and the 3V3 wire.");
   } else if (rtc.lostPower()) {   // the DS3231 stop flag is set: its time cannot be trusted
